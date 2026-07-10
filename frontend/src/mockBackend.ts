@@ -715,12 +715,9 @@ export function earlyWithdrawFixedDeposit(fdId: string, userId: string) {
   const now = new Date();
   const daysDiff = Math.max(0, Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
 
-  const annualRate = fd.interest_rate / 100;
-  const accruedInterest = fd.amount * annualRate * (daysDiff / 365);
-  
-  // 50% interest penalty
-  const finalInterest = accruedInterest * 0.5;
-  const totalPayout = fd.amount + finalInterest;
+  // 10% penalty on principal for early liquidation before maturity (no interest payout)
+  const penalty = fd.amount * 0.1;
+  const totalPayout = fd.amount - penalty;
 
   const accounts = getStorage<Account[]>('accounts', []);
   const custAcc = accounts.find(a => a.user_id === userId && a.type === 'savings')!;
@@ -751,10 +748,10 @@ export function earlyWithdrawFixedDeposit(fdId: string, userId: string) {
   setStorage('transactions', txns);
 
   addLedgerEntry(txnId, treasury.id, 'DEBIT', totalPayout, treasury.balance, `Early liquidation payout for Cert ${fd.certificate_number}`);
-  addLedgerEntry(txnId, custAcc.id, 'CREDIT', totalPayout, custAcc.balance, `Accrued payout for Cert ${fd.certificate_number} with early withdrawal penalty`);
+  addLedgerEntry(txnId, custAcc.id, 'CREDIT', totalPayout, custAcc.balance, `Accrued payout for Cert ${fd.certificate_number} with 10% principal deduction penalty`);
 
-  addNotification(userId, 'Fixed Deposit Liquidated', `Certificate ${fd.certificate_number} was early liquidated. Paid ${totalPayout.toLocaleString()} NGN.`);
-  addAudit(userId, 'fixed_deposit_early_withdrawal', `Early liquidated Fixed Deposit ${fd.certificate_number}`);
+  addNotification(userId, 'Fixed Deposit Liquidated', `Certificate ${fd.certificate_number} was early liquidated. A 10% deduction was applied to your principal. Paid ${totalPayout.toLocaleString()} NGN.`);
+  addAudit(userId, 'fixed_deposit_early_withdrawal', `Early liquidated Fixed Deposit ${fd.certificate_number} (10% principal penalty applied)`);
 
   return fd;
 }
@@ -910,4 +907,16 @@ export function payInvoice(invoiceId: string, customerAccountNo: string, idempot
     invoice: inv,
     transfer: transferTxn
   };
+}
+
+export function setUserStatus(userId: string, status: 'active' | 'frozen' | 'locked') {
+  const users = getStorage<User[]>('users', []);
+  const user = users.find(u => u.id === userId);
+  if (!user) throw new Error('User not found');
+  
+  user.status = status;
+  setStorage('users', users);
+  
+  addAudit(SYS_USER_ID, 'user_status_change', `Changed status of user ${user.email} to ${status}`);
+  addNotification(userId, 'Account Status Updated', `Your account status has been updated to ${status} by the bank administration.`);
 }

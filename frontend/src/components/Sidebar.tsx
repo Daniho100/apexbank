@@ -22,45 +22,50 @@ export const Sidebar: React.FC = () => {
 
       {/* Nav Menu */}
       <nav className="flex-1 p-4 flex flex-col gap-1.5">
-        <button 
-          onClick={() => setActiveTab('overview')} 
-          className={activeTab === 'overview' ? tabClassActive : tabClassInactive}
-        >
-          <CreditCard size={18} /> Overview
-        </button>
-        <button 
-          onClick={() => setActiveTab('transfers')} 
-          className={activeTab === 'transfers' ? tabClassActive : tabClassInactive}
-        >
-          <Send size={18} /> Payments
-        </button>
-        <button 
-          onClick={() => setActiveTab('fixed-deposits')} 
-          className={activeTab === 'fixed-deposits' ? tabClassActive : tabClassInactive}
-        >
-          <Percent size={18} /> Fixed Deposits
-        </button>
-        <button 
-          onClick={() => setActiveTab('loans')} 
-          className={activeTab === 'loans' ? tabClassActive : tabClassInactive}
-        >
-          <Award size={18} /> Loans Engine
-        </button>
-        <button 
-          onClick={() => setActiveTab('utilities')} 
-          className={activeTab === 'utilities' ? tabClassActive : tabClassInactive}
-        >
-          <Zap size={18} /> Utilities
-        </button>
-        
-        {merchantProfile && (
-          <button 
-            onClick={() => setActiveTab('merchant')} 
-            className={activeTab === 'merchant' ? tabClassActive : tabClassInactive}
-          >
-            <Globe size={18} /> Merchant console
-          </button>
+        {currentUser.role !== 'administrator' && (
+          <>
+            <button 
+              onClick={() => setActiveTab('overview')} 
+              className={activeTab === 'overview' ? tabClassActive : tabClassInactive}
+            >
+              <CreditCard size={18} /> Overview
+            </button>
+            <button 
+              onClick={() => setActiveTab('transfers')} 
+              className={activeTab === 'transfers' ? tabClassActive : tabClassInactive}
+            >
+              <Send size={18} /> Payments
+            </button>
+            <button 
+              onClick={() => setActiveTab('fixed-deposits')} 
+              className={activeTab === 'fixed-deposits' ? tabClassActive : tabClassInactive}
+            >
+              <Percent size={18} /> Fixed Deposits
+            </button>
+            <button 
+              onClick={() => setActiveTab('loans')} 
+              className={activeTab === 'loans' ? tabClassActive : tabClassInactive}
+            >
+              <Award size={18} /> Loans Engine
+            </button>
+            <button 
+              onClick={() => setActiveTab('utilities')} 
+              className={activeTab === 'utilities' ? tabClassActive : tabClassInactive}
+            >
+              <Zap size={18} /> Utilities
+            </button>
+            
+            {merchantProfile && (
+              <button 
+                onClick={() => setActiveTab('merchant')} 
+                className={activeTab === 'merchant' ? tabClassActive : tabClassInactive}
+              >
+                <Globe size={18} /> Merchant console
+              </button>
+            )}
+          </>
         )}
+        
         {currentUser.role === 'administrator' && (
           <button 
             onClick={() => setActiveTab('admin')} 

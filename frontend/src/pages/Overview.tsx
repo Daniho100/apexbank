@@ -294,31 +294,36 @@ export const Overview: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {transactions.map(t => (
-                  <tr key={t.id} className="border-b border-slate-850 hover:bg-slate-855/20 transition-colors">
-                    <td className="py-4 pr-4 font-mono text-xs text-slate-400">{t.reference_number}</td>
-                    <td className="py-4 pr-4 uppercase font-bold text-[10px] tracking-wider">
-                      <span className={`px-2 py-0.5 rounded-full border ${
-                        t.type === 'deposit' || t.type === 'loan_disbursement' 
-                          ? 'bg-emerald-950/40 border-emerald-500/20 text-emerald-400' 
-                          : 'bg-slate-950/40 border-slate-800 text-slate-400'
+                {transactions.map(t => {
+                  const isIncoming = activeAccount 
+                    ? t.receiver_account_id === activeAccount.id 
+                    : (t.type === 'deposit' || t.type === 'loan_disbursement');
+                  return (
+                    <tr key={t.id} className="border-b border-slate-850 hover:bg-slate-855/20 transition-colors">
+                      <td className="py-4 pr-4 font-mono text-xs text-slate-400">{t.reference_number}</td>
+                      <td className="py-4 pr-4 uppercase font-bold text-[10px] tracking-wider">
+                        <span className={`px-2 py-0.5 rounded-full border ${
+                          isIncoming 
+                            ? 'bg-emerald-950/40 border-emerald-500/20 text-emerald-400' 
+                            : 'bg-slate-950/40 border-slate-800 text-slate-400'
+                        }`}>
+                          {t.type.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="py-4 pr-4 text-slate-400 text-xs">{t.description}</td>
+                      <td className={`py-4 pr-4 text-right font-black ${
+                        isIncoming ? 'text-emerald-400' : 'text-rose-400'
                       }`}>
-                        {t.type.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="py-4 pr-4 text-slate-400 text-xs">{t.description}</td>
-                    <td className={`py-4 pr-4 text-right font-black ${
-                      t.type === 'deposit' || t.type === 'loan_disbursement' ? 'text-emerald-400' : 'text-rose-400'
-                    }`}>
-                      {t.type === 'deposit' || t.type === 'loan_disbursement' ? '+' : '-'} {t.amount.toLocaleString()} NGN
-                    </td>
-                    <td className="py-4 text-center">
-                      <span className="text-[10px] bg-blue-950 text-blue-400 border border-blue-500/10 px-2 py-0.5 rounded-full font-bold">
-                        {t.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                        {isIncoming ? '+' : '-'} {t.amount.toLocaleString()} NGN
+                      </td>
+                      <td className="py-4 text-center">
+                        <span className="text-[10px] bg-blue-950 text-blue-400 border border-blue-500/10 px-2 py-0.5 rounded-full font-bold">
+                          {t.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

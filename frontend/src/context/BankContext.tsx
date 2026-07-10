@@ -137,7 +137,10 @@ export const BankProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .filter((n) => n.user_id === currentUser.id);
     setNotifications(notes);
 
-    const loans = bank.getStorage<bank.Loan[]>('loans', []).filter((l) => l.user_id === currentUser.id);
+    const allLoans = bank.getStorage<bank.Loan[]>('loans', []);
+    const loans = currentUser.role === 'administrator'
+      ? allLoans
+      : allLoans.filter((l) => l.user_id === currentUser.id);
     setLoansList(loans);
 
     const schedules = bank.getStorage<bank.LoanSchedule[]>('loan_schedules', []);
@@ -161,6 +164,13 @@ export const BankProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     reloadUserData();
+    if (currentUser) {
+      if (currentUser.role === 'administrator') {
+        setActiveTab('admin');
+      } else {
+        setActiveTab('overview');
+      }
+    }
   }, [currentUser]);
 
   // Handle auto load of token if exists in session storage
