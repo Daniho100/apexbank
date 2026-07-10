@@ -5,6 +5,8 @@
 #include <json/json.h>
 #include <chrono>
 #include <cstdlib>
+#include <iomanip>
+#include <sstream>
 
 namespace banking::controllers {
 
@@ -233,7 +235,16 @@ void AuthController::loginUser(
         // 4. Save session inside Postgres
         std::string refreshToken = security::TokenManager::generateRefreshToken();
         auto expiryTime = now + std::chrono::hours(24);
-        std::string expiryStr = drogon::utils::formattedString(expiryTime, "%Y-%m-%d %H:%M:%S");
+        auto time_t_expiry = std::chrono::system_clock::to_time_t(expiryTime);
+        std::tm buf;
+#ifdef _WIN32
+        localtime_s(&buf, &time_t_expiry);
+#else
+        localtime_r(&time_t_expiry, &buf);
+#endif
+        std::stringstream ss;
+        ss << std::put_time(&buf, "%Y-%m-%d %H:%M:%S");
+        std::string expiryStr = ss.str();
 
         db->execSqlSync(
             "INSERT INTO sessions (user_id, refresh_token, token_expires_at) VALUES ($1, $2, $3::timestamp)",
