@@ -58,11 +58,11 @@ export const Transfers: React.FC = () => {
     }
   }, [currentUser, transactions]);
 
-  const executeTransferAction = () => {
+  const executeTransferAction = async () => {
     if (!currentUser || !activeAccount || !transferTarget || !transferAmount) return;
     try {
       const amt = parseFloat(transferAmount);
-      bank.processTransfer(
+      await bank.processTransfer(
         activeAccount.account_number, 
         transferTarget, 
         amt, 
@@ -83,7 +83,7 @@ export const Transfers: React.FC = () => {
       setTransferTarget('');
       setTransferDesc('');
       regenerateIdempotencyKey();
-      reloadUserData();
+      await reloadUserData();
     } catch (err: any) {
       showToast('error', err.message);
     }

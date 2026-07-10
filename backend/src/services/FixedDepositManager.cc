@@ -176,14 +176,11 @@ Json::Value FixedDepositManager::earlyWithdraw(
         double daysElapsed = fdRow["days_elapsed"].as<double>();
         if (daysElapsed < 0) daysElapsed = 0;
         
-        // 2. Calculate accrued interest
-        double annualRate = rate / 100.0;
-        double accruedInterest = amount * annualRate * (daysElapsed / 365.0);
-        
-        // Apply 50% early withdrawal penalty on accrued interest
-        double penalty = accruedInterest * 0.5;
-        double finalInterestPaid = accruedInterest - penalty;
-        double totalPayout = amount + finalInterestPaid;
+        // 2. Apply 10% penalty on principal for early withdrawal (no interest payout)
+        double principalPenalty = amount * 0.1;
+        double totalPayout = amount - principalPenalty;
+        double finalInterestPaid = 0.0;
+        double penalty = principalPenalty;
         
         // 3. Lock Customer savings account
         auto custResult = trans->execSqlSync(
@@ -246,7 +243,7 @@ Json::Value FixedDepositManager::earlyWithdraw(
             "INSERT INTO audit_logs (user_id, action, description) "
             "VALUES ($1, 'fixed_deposit_early_withdrawal', $2)",
             userId,
-            "Early liquidated fixed deposit " + fdId + ". Paid principal: " + std::to_string(amount) + " NGN, interest: " + std::to_string(finalInterestPaid) + " NGN (after penalty). Cert No: " + certNo
+            "Early liquidated fixed deposit " + fdId + ". 10% principal deduction applied. Paid: " + std::to_string(totalPayout) + " NGN. Cert No: " + certNo
         );
         
         // Notification
@@ -254,7 +251,7 @@ Json::Value FixedDepositManager::earlyWithdraw(
             "INSERT INTO notifications (user_id, title, content, type) "
             "VALUES ($1, 'Fixed Deposit Early Liquidated', $2, 'in_app')",
             userId,
-            "Your Fixed Deposit Certificate " + certNo + " was early liquidated. Paid: " + std::to_string(totalPayout) + " NGN (accrued interest penalized by 50%)."
+            "Your Fixed Deposit Certificate " + certNo + " was early liquidated. A 10% deduction was applied to your principal. Paid: " + std::to_string(totalPayout) + " NGN."
         );
         
         trans->execSqlSync("COMMIT");

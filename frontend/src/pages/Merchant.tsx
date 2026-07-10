@@ -23,31 +23,31 @@ export const Merchant: React.FC = () => {
   const [invoiceAmount, setInvoiceAmount] = useState('');
   const [invoiceDesc, setInvoiceDesc] = useState('');
 
-  const handleRegisterMerchant = (e: React.FormEvent) => {
+  const handleRegisterMerchant = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser || !merchantBusinessName) return;
     try {
-      bank.registerMerchant(currentUser.id, merchantBusinessName, merchantWebhookUrl);
+      await bank.registerMerchant(currentUser.id, merchantBusinessName, merchantWebhookUrl);
       showToast('success', 'Merchant account generated.');
       setMerchantBusinessName('');
       setMerchantWebhookUrl('');
-      reloadUserData();
+      await reloadUserData();
     } catch (err: any) {
       showToast('error', err.message);
     }
   };
 
-  const handleCreateInvoice = (e: React.FormEvent) => {
+  const handleCreateInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser || !invoiceCustomer || !invoiceAmount) return;
     try {
       const amt = parseFloat(invoiceAmount);
-      bank.createInvoice(currentUser.id, invoiceCustomer, amt, invoiceDesc);
+      await bank.createInvoice(currentUser.id, invoiceCustomer, amt, invoiceDesc);
       showToast('success', 'Invoice published.');
       setInvoiceCustomer('');
       setInvoiceAmount('');
       setInvoiceDesc('');
-      reloadUserData();
+      await reloadUserData();
     } catch (err: any) {
       showToast('error', err.message);
     }

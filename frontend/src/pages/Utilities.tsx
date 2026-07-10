@@ -26,7 +26,7 @@ export const Utilities: React.FC = () => {
   const [tokenToValidate, setTokenToValidate] = useState('');
   const [validationResult, setValidationResult] = useState<{ status: string; message: string } | null>(null);
 
-  const handlePayUtility = (e: React.FormEvent) => {
+  const handlePayUtility = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeAccount) {
       return showToast('error', 'No active account selected.');
@@ -36,7 +36,7 @@ export const Utilities: React.FC = () => {
     }
     try {
       const amt = parseFloat(utilityAmount);
-      const res = bank.payUtility(
+      const res = await bank.payUtility(
         activeAccount.account_number, 
         utilityProvider, 
         utilityRecipient, 
@@ -45,7 +45,7 @@ export const Utilities: React.FC = () => {
         idempotencyKey
       );
       showToast('success', `${utilityType} payment processed.`);
-      if (res.token) {
+      if (res && res.token) {
         setUtilityTokenResult(res.token);
       } else {
         setUtilityTokenResult(null);
@@ -53,21 +53,25 @@ export const Utilities: React.FC = () => {
       setUtilityRecipient('');
       setUtilityAmount('');
       regenerateIdempotencyKey();
-      reloadUserData();
+      await reloadUserData();
     } catch (err: any) {
       showToast('error', err.message);
     }
   };
 
-  const handleValidateToken = (e: React.FormEvent) => {
+  const handleValidateToken = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tokenToValidate) return;
-    const res = bank.validatePrepaidToken(tokenToValidate);
-    setValidationResult(res);
-    if (res.status === 'success') {
-      showToast('success', 'Prepaid units uploaded.');
-    } else {
-      showToast('error', res.message);
+    try {
+      const res = await bank.validatePrepaidToken(tokenToValidate);
+      setValidationResult(res);
+      if (res && res.status === 'success') {
+        showToast('success', 'Prepaid units uploaded.');
+      } else {
+        showToast('error', res ? res.message : 'Validation failed.');
+      }
+    } catch (err: any) {
+      showToast('error', err.message);
     }
     setTokenToValidate('');
   };

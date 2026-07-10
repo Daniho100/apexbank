@@ -37,7 +37,7 @@ export const Loans: React.FC = () => {
     }
   };
 
-  const handleApplyLoan = (e: React.FormEvent) => {
+  const handleApplyLoan = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser || !loanAmount) return;
     if (hasDefaultedLoan) {
@@ -47,27 +47,27 @@ export const Loans: React.FC = () => {
       const amt = parseFloat(loanAmount);
       const months = parseInt(loanDuration);
       const rate = getLoanRate(loanDuration);
-      bank.applyLoan(currentUser.id, amt, months, rate);
+      await bank.applyLoan(currentUser.id, amt, months, rate);
       showToast('success', 'Loan request submitted for processing.');
       setLoanAmount('');
-      reloadUserData();
+      await reloadUserData();
     } catch (err: any) {
       showToast('error', err.message);
     }
   };
 
-  const handleRepayLoan = (e: React.FormEvent) => {
+  const handleRepayLoan = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeAccount || !activeLoanId || !loanRepayAmount) {
       return showToast('error', 'Please select a loan and enter a repayment amount.');
     }
     try {
       const amt = parseFloat(loanRepayAmount);
-      bank.manualRepayLoan(activeLoanId, activeAccount.account_number, amt, idempotencyKey);
+      await bank.manualRepayLoan(activeLoanId, activeAccount.account_number, amt, idempotencyKey);
       showToast('success', `Loan repayment of ${amt.toLocaleString()} NGN posted.`);
       setLoanRepayAmount('');
       regenerateIdempotencyKey();
-      reloadUserData();
+      await reloadUserData();
     } catch (err: any) {
       showToast('error', err.message);
     }

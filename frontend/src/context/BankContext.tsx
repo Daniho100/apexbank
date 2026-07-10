@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import * as bank from '../mockBackend';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
 interface BankContextType {
   currentUser: bank.User | null;
   setCurrentUser: (user: bank.User | null) => void;
@@ -80,13 +82,6 @@ export const BankProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem(`verified_${currentUser.id}`, 'true');
       setIsIdentityVerified(true);
       logSecurity('Identity Verified', `User verified profile via BVN/NIN: ${cleanNum.slice(0, 3)}*******${cleanNum.slice(-2)}`);
-      
-      // Seed audit log and system notification
-      bank.addNotification(
-        currentUser.id, 
-        'Identity Verified Successfully', 
-        'Your identity profile (BVN/NIN Verification status) has been successfully verified. High-value transfer limits have been unlocked.'
-      );
       reloadUserData();
       return true;
     }
@@ -115,51 +110,95 @@ export const BankProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIdempotencyKey(crypto.randomUUID());
   };
 
-  const reloadUserData = () => {
+  const reloadUserData = async () => {
     if (!currentUser) return;
-    const accounts = bank.getStorage<bank.Account[]>('accounts', []);
-    const userAccs = accounts.filter((a) => a.user_id === currentUser.id);
-    setUserAccounts(userAccs);
-    if (userAccs.length > 0) {
-      const currentSelected =
-        userAccs.find((a) => a.account_number === activeAccount?.account_number) || userAccs[0];
-      setActiveAccount(currentSelected);
+    const token = sessionStorage.getItem('auth_token');
+    if (!token) return;
 
-      const txns = bank.getStorage<bank.Transaction[]>('transactions', []);
-      const userTxns = txns.filter(
-        (t) => t.sender_account_id === currentSelected.id || t.receiver_account_id === currentSelected.id
-      );
-      setTransactions(userTxns);
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+
+    try {
+      // 1. Fetch accounts
+      const accountsRes = await fetch(`${API_URL}/api/accounts`, { headers });
+      if (!accountsRes.ok) throw new Error('Failed to fetch accounts');
+      const userAccs = await accountsRes.json();
+      setUserAccounts(userAccs);
+
+      // Set active account and fetch transactions if account exists
+      if (userAccs.length > 0) {
+        const currentSelected =
+          userAccs.find((a: any) => a.account_number === activeAccount?.account_number) || userAccs[0];
+        setActiveAccount(currentSelected);
+
+        const txnsRes = await fetch(`${API_URL}/api/transactions?account_id=${currentSelected.id}`, { headers });
+        if (txnsRes.ok) {
+          const userTxns = await txnsRes.json();
+          setTransactions(userTxns);
+        }
+        
+        // If merchant, set merchant wallet
+        if (currentUser.role === 'customer' || currentUser.role === 'merchant') {
+          const mWallet = userAccs.find((a: any) => a.type === 'merchant');
+          setMerchantWallet(mWallet || null);
+        }
+      }
+
+      // 2. Fetch notifications
+      const notesRes = await fetch(`${API_URL}/api/notifications`, { headers });
+      if (notesRes.ok) {
+        const notes = await notesRes.json();
+        setNotifications(notes);
+      }
+
+      // 3. Fetch loans
+      const loansRes = await fetch(`${API_URL}/api/loans`, { headers });
+      if (loansRes.ok) {
+        const loans = await loansRes.json();
+        setLoansList(loans);
+      }
+
+      // 4. Fetch loan schedules
+      const schedulesRes = await fetch(`${API_URL}/api/loans/schedules`, { headers });
+      if (schedulesRes.ok) {
+        const schedules = await schedulesRes.json();
+        setLoanSchedules(schedules);
+      }
+
+      // 5. Fetch fixed deposits
+      const fdsRes = await fetch(`${API_URL}/api/fixed-deposits`, { headers });
+      if (fdsRes.ok) {
+        const fds = await fdsRes.json();
+        setFdList(fds);
+      }
+
+      // 6. Fetch merchant profile & invoices
+      const profileRes = await fetch(`${API_URL}/api/merchants/profile`, { headers });
+      if (profileRes.ok) {
+        const profile = await profileRes.json();
+        setMerchantProfile(profile);
+        if (profile) {
+          const invoicesRes = await fetch(`${API_URL}/api/merchants/invoices`, { headers });
+          if (invoicesRes.ok) {
+            const invoices = await invoicesRes.json();
+            setMerchantInvoices(invoices);
+          }
+        }
+      }
+
+      // 7. Fetch audit logs (admin only)
+      if (currentUser.role === 'administrator') {
+        const auditRes = await fetch(`${API_URL}/api/admin/audit-logs`, { headers });
+        if (auditRes.ok) {
+          const logs = await auditRes.json();
+          setAuditLogs(logs);
+        }
+      }
+    } catch (e) {
+      console.error('Error reloading user data:', e);
     }
-
-    const notes = bank
-      .getStorage<bank.Notification[]>('notifications', [])
-      .filter((n) => n.user_id === currentUser.id);
-    setNotifications(notes);
-
-    const allLoans = bank.getStorage<bank.Loan[]>('loans', []);
-    const loans = currentUser.role === 'administrator'
-      ? allLoans
-      : allLoans.filter((l) => l.user_id === currentUser.id);
-    setLoansList(loans);
-
-    const schedules = bank.getStorage<bank.LoanSchedule[]>('loan_schedules', []);
-    setLoanSchedules(schedules);
-
-    const fds = bank.getStorage<bank.FixedDeposit[]>('fixed_deposits', []).filter((f) => f.user_id === currentUser.id);
-    setFdList(fds);
-
-    const merchants = bank.getStorage<bank.MerchantAccount[]>('merchants', []);
-    const merc = merchants.find((m) => m.user_id === currentUser.id);
-    setMerchantProfile(merc || null);
-    if (merc) {
-      const mercInvs = bank.getStorage<bank.MerchantInvoice[]>('invoices', []).filter((i) => i.merchant_id === merc.id);
-      setMerchantInvoices(mercInvs);
-      const mWallet = accounts.find((a) => a.user_id === currentUser.id && a.type === 'merchant');
-      setMerchantWallet(mWallet || null);
-    }
-
-    setAuditLogs(bank.getStorage<bank.AuditLog[]>('audit_logs', []));
   };
 
   useEffect(() => {
@@ -172,6 +211,27 @@ export const BankProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
   }, [currentUser]);
+
+  // Load transactions when activeAccount changes
+  useEffect(() => {
+    if (activeAccount && currentUser) {
+      const token = sessionStorage.getItem('auth_token');
+      if (token) {
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        };
+        fetch(`${API_URL}/api/transactions?account_id=${activeAccount.id}`, { headers })
+          .then(res => res.json())
+          .then(userTxns => {
+            if (Array.isArray(userTxns)) {
+              setTransactions(userTxns);
+            }
+          })
+          .catch(err => console.error(err));
+      }
+    }
+  }, [activeAccount?.account_number, currentUser]);
 
   // Handle auto load of token if exists in session storage
   useEffect(() => {

@@ -31,28 +31,28 @@ export const FixedDeposits: React.FC = () => {
     ? parseFloat(fdAmount) + estimatedInterest 
     : 0;
 
-  const handleCreateFD = (e: React.FormEvent) => {
+  const handleCreateFD = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser || !fdAmount) return;
     try {
       const amt = parseFloat(fdAmount);
       const months = parseInt(fdDuration);
       const rate = getInterestRate(fdDuration);
-      bank.createFixedDeposit(currentUser.id, amt, months, rate);
+      await bank.createFixedDeposit(currentUser.id, amt, months, rate);
       showToast('success', 'Fixed Deposit Certificate generated successfully.');
       setFdAmount('');
-      reloadUserData();
+      await reloadUserData();
     } catch (err: any) {
       showToast('error', err.message);
     }
   };
 
-  const handleLiquidateFD = (fdId: string) => {
+  const handleLiquidateFD = async (fdId: string) => {
     if (!currentUser) return;
     try {
-      bank.earlyWithdrawFixedDeposit(fdId, currentUser.id);
+      await bank.earlyWithdrawFixedDeposit(fdId, currentUser.id);
       showToast('success', 'Certificate early liquidated.');
-      reloadUserData();
+      await reloadUserData();
     } catch (err: any) {
       showToast('error', err.message);
     }

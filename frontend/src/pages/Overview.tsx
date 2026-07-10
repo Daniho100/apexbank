@@ -35,31 +35,31 @@ export const Overview: React.FC = () => {
     return loansList.some(l => l.status === 'defaulted');
   }, [loansList]);
 
-  const handleDeposit = (e: React.FormEvent) => {
+  const handleDeposit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeAccount || !depositAmount) return;
     try {
       const amt = parseFloat(depositAmount);
-      bank.processDeposit(activeAccount.account_number, amt, idempotencyKey, "Cash deposit clearance");
+      await bank.processDeposit(activeAccount.account_number, amt, idempotencyKey, "Cash deposit clearance");
       showToast('success', `Cash deposit of ${amt.toLocaleString()} NGN processed.`);
       setDepositAmount('');
       regenerateIdempotencyKey();
-      reloadUserData();
+      await reloadUserData();
     } catch (err: any) {
       showToast('error', err.message);
     }
   };
 
-  const handleWithdraw = (e: React.FormEvent) => {
+  const handleWithdraw = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeAccount || !withdrawAmount) return;
     try {
       const amt = parseFloat(withdrawAmount);
-      bank.processWithdrawal(activeAccount.account_number, amt, idempotencyKey, "ATM Withdrawal");
+      await bank.processWithdrawal(activeAccount.account_number, amt, idempotencyKey, "ATM Withdrawal");
       showToast('success', `Withdrawal of ${amt.toLocaleString()} NGN completed.`);
       setWithdrawAmount('');
       regenerateIdempotencyKey();
-      reloadUserData();
+      await reloadUserData();
     } catch (err: any) {
       showToast('error', err.message);
     }

@@ -1,30 +1,68 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Shield, Terminal, Search, UserCheck, UserX, AlertTriangle, Info, BookOpen, Layers
 } from 'lucide-react';
 import { useBank } from '../context/BankContext';
 import * as bank from '../mockBackend';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
 const btnPrimary = "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold py-2.5 px-4 rounded-xl transition-all shadow-lg shadow-blue-500/10 active:scale-[0.98] cursor-pointer text-xs flex items-center gap-1.5 border border-blue-500/10";
 const btnDanger = "bg-rose-600 hover:bg-rose-500 text-white font-semibold py-2.5 px-4 rounded-xl transition-all active:scale-[0.98] cursor-pointer text-xs flex items-center gap-1.5 border border-rose-500/10";
 const btnSuccess = "bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 px-4 rounded-xl transition-all active:scale-[0.98] cursor-pointer text-xs flex items-center gap-1.5 border border-emerald-500/10";
 
 export const Admin: React.FC = () => {
-  const { loansList, auditLogs, reloadUserData, showToast } = useBank();
+  const { loansList, loanSchedules, auditLogs, reloadUserData, showToast } = useBank();
   
   // Selection states
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [userSearchQuery, setUserSearchQuery] = useState('');
 
+  // Dynamic user list from REST API
+  const [allUsers, setAllUsers] = useState<bank.User[]>([]);
+  
+  // Dynamic activity details from REST API
+  const [selectedUserActivity, setSelectedUserActivity] = useState<{
+    accounts: bank.Account[];
+    transactions: bank.Transaction[];
+    audit_logs: bank.AuditLog[];
+  } | null>(null);
+
+  const fetchUsers = () => {
+    const token = sessionStorage.getItem('auth_token');
+    fetch(`${API_URL}/api/admin/users`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setAllUsers(data.filter(u => u.email !== 'system_treasury@banking.com'));
+        }
+      })
+      .catch(err => console.error(err));
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, [loansList]);
+
+  useEffect(() => {
+    if (!selectedUserId) {
+      setSelectedUserActivity(null);
+      return;
+    }
+    const token = sessionStorage.getItem('auth_token');
+    fetch(`${API_URL}/api/admin/users/${selectedUserId}/activity`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => setSelectedUserActivity(data))
+      .catch(err => console.error(err));
+  }, [selectedUserId, loansList]);
+
   // 1. Pending Loan Approvals list (globally across all users)
   const pendingLoans = useMemo(() => {
     return loansList.filter(l => l.status === 'pending');
-  }, [loansList]);
-
-  // 2. Fetch all system users (excluding treasury system users)
-  const allUsers = useMemo(() => {
-    const users = bank.getStorage<bank.User[]>('users', []);
-    return users.filter(u => u.email !== 'system_treasury@banking.com');
   }, [loansList]);
 
   // Filter user list based on search query
@@ -37,64 +75,47 @@ export const Admin: React.FC = () => {
 
   // 3. Scan for Overdue Loans that are Unpaid
   const overdueAlertUsers = useMemo(() => {
-    const loans = bank.getStorage<bank.Loan[]>('loans', []);
-    const schedules = bank.getStorage<bank.LoanSchedule[]>('loan_schedules', []);
     const now = new Date();
     
     // Installments that are overdue and unpaid
-    const overdueLoanIds = schedules
+    const overdueLoanIds = loanSchedules
       .filter(s => s.status === 'unpaid' && new Date(s.due_date) < now)
       .map(s => s.loan_id);
       
-    const userIdsWithOverdue = loans
+    const userIdsWithOverdue = loansList
       .filter(l => overdueLoanIds.includes(l.id) && l.status === 'active')
       .map(l => l.user_id);
       
     return allUsers.filter(u => userIdsWithOverdue.includes(u.id));
-  }, [allUsers, loansList]);
+  }, [allUsers, loansList, loanSchedules]);
 
   // Selected User's Details
   const selectedUser = useMemo(() => {
     return allUsers.find(u => u.id === selectedUserId) || null;
   }, [allUsers, selectedUserId]);
 
-  const selectedUserAccounts = useMemo(() => {
-    if (!selectedUserId) return [];
-    const accounts = bank.getStorage<bank.Account[]>('accounts', []);
-    return accounts.filter(a => a.user_id === selectedUserId);
-  }, [selectedUserId, loansList]);
-
-  const selectedUserTransactions = useMemo(() => {
-    if (!selectedUserId) return [];
-    const accIds = selectedUserAccounts.map(a => a.id);
-    const txns = bank.getStorage<bank.Transaction[]>('transactions', []);
-    return txns.filter(t => accIds.includes(t.sender_account_id) || accIds.includes(t.receiver_account_id));
-  }, [selectedUserId, selectedUserAccounts, loansList]);
-
-  const selectedUserAuditLogs = useMemo(() => {
-    if (!selectedUserId) return [];
-    const logs = bank.getStorage<bank.AuditLog[]>('audit_logs', []);
-    return logs.filter(l => l.user_id === selectedUserId);
-  }, [selectedUserId, loansList]);
+  const selectedUserAccounts = selectedUserActivity?.accounts || [];
+  const selectedUserTransactions = selectedUserActivity?.transactions || [];
+  const selectedUserAuditLogs = selectedUserActivity?.audit_logs || [];
 
   // Action: Approve Loan Request
-  const handleApproveLoan = (loanId: string) => {
+  const handleApproveLoan = async (loanId: string) => {
     try {
-      bank.approveLoan(loanId);
+      await bank.approveLoan(loanId);
       showToast('success', 'Loan approved and funds disbursed successfully.');
-      reloadUserData();
+      await reloadUserData();
     } catch (err: any) {
       showToast('error', err.message);
     }
   };
 
   // Action: Freeze / Unfreeze a User (Blacklist)
-  const handleToggleStatus = (userId: string, currentStatus: string) => {
+  const handleToggleStatus = async (userId: string, currentStatus: string) => {
     try {
       const nextStatus = currentStatus === 'active' ? 'frozen' : 'active';
-      bank.setUserStatus(userId, nextStatus);
+      await bank.setUserStatus(userId, nextStatus);
       showToast('success', `User status updated to: ${nextStatus.toUpperCase()}`);
-      reloadUserData();
+      await reloadUserData();
     } catch (err: any) {
       showToast('error', err.message);
     }
