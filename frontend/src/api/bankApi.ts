@@ -188,7 +188,7 @@ export async function processTransfer(senderNo: string, receiverNo: string, amou
   });
 }
 
-export async function applyLoan(userId: string, amount: number, duration: number, rate = 10) {
+export async function applyLoan(_userId: string, amount: number, duration: number, rate = 10) {
   return apiRequest('/api/loans/apply', {
     method: 'POST',
     body: JSON.stringify({ amount, duration_months: duration, interest_rate: rate })
@@ -210,14 +210,14 @@ export async function manualRepayLoan(loanId: string, accountNo: string, amount:
   });
 }
 
-export async function createFixedDeposit(userId: string, amount: number, duration: number, rate = 12) {
+export async function createFixedDeposit(_userId: string, amount: number, duration: number, rate = 12) {
   return apiRequest('/api/fixed-deposits/create', {
     method: 'POST',
     body: JSON.stringify({ amount, duration_months: duration, interest_rate: rate })
   });
 }
 
-export async function earlyWithdrawFixedDeposit(fdId: string, userId: string) {
+export async function earlyWithdrawFixedDeposit(fdId: string, _userId: string) {
   return apiRequest('/api/fixed-deposits/liquidate', {
     method: 'POST',
     body: JSON.stringify({ fixed_deposit_id: fdId })
@@ -239,14 +239,14 @@ export async function validatePrepaidToken(token: string) {
   });
 }
 
-export async function registerMerchant(userId: string, businessName: string, webhookUrl: string) {
+export async function registerMerchant(_userId: string, businessName: string, webhookUrl: string) {
   return apiRequest('/api/merchants/register', {
     method: 'POST',
     body: JSON.stringify({ business_name: businessName, webhook_url: webhookUrl })
   });
 }
 
-export async function createInvoice(merchantUserId: string, customerAcc: string, amount: number, description: string) {
+export async function createInvoice(_merchantUserId: string, customerAcc: string, amount: number, description: string) {
   return apiRequest('/api/merchants/invoices', {
     method: 'POST',
     body: JSON.stringify({ customer_account_number: customerAcc, amount, description })
