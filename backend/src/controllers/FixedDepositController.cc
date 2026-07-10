@@ -26,19 +26,16 @@ void FixedDepositController::getDeposits(
     }
 
     try {
-        drogon::orm::Result result;
-        if (role == "administrator") {
-            result = db->execSqlSync(
+        auto result = (role == "administrator") ?
+            db->execSqlSync(
                 "SELECT id, user_id, amount, duration_months, interest_rate, status, start_date, maturity_date, certificate_number "
                 "FROM fixed_deposits ORDER BY start_date DESC"
-            );
-        } else {
-            result = db->execSqlSync(
+            ) :
+            db->execSqlSync(
                 "SELECT id, user_id, amount, duration_months, interest_rate, status, start_date, maturity_date, certificate_number "
                 "FROM fixed_deposits WHERE user_id = $1 ORDER BY start_date DESC",
                 userId
             );
-        }
 
         Json::Value arr(Json::arrayValue);
         for (auto const& row : result) {

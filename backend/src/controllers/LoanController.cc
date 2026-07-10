@@ -26,19 +26,16 @@ void LoanController::getLoans(
     }
 
     try {
-        drogon::orm::Result result;
-        if (role == "administrator") {
-            result = db->execSqlSync(
+        auto result = (role == "administrator") ?
+            db->execSqlSync(
                 "SELECT id, user_id, amount, interest_rate, duration_months, monthly_repayment, outstanding_balance, status, approved_at, disbursed_at, due_date, created_at "
                 "FROM loans ORDER BY created_at DESC"
-            );
-        } else {
-            result = db->execSqlSync(
+            ) :
+            db->execSqlSync(
                 "SELECT id, user_id, amount, interest_rate, duration_months, monthly_repayment, outstanding_balance, status, approved_at, disbursed_at, due_date, created_at "
                 "FROM loans WHERE user_id = $1 ORDER BY created_at DESC",
                 userId
             );
-        }
 
         Json::Value arr(Json::arrayValue);
         for (auto const& row : result) {
@@ -215,19 +212,16 @@ void LoanController::getSchedules(
     }
 
     try {
-        drogon::orm::Result result;
-        if (role == "administrator") {
-            result = db->execSqlSync(
+        auto result = (role == "administrator") ?
+            db->execSqlSync(
                 "SELECT id, loan_id, installment_number, amount_due, principal_due, interest_due, amount_paid, due_date, status, paid_at "
                 "FROM loan_schedules ORDER BY installment_number ASC"
-            );
-        } else {
-            result = db->execSqlSync(
+            ) :
+            db->execSqlSync(
                 "SELECT s.id, s.loan_id, s.installment_number, s.amount_due, s.principal_due, s.interest_due, s.amount_paid, s.due_date, s.status, s.paid_at "
                 "FROM loan_schedules s JOIN loans l ON s.loan_id = l.id WHERE l.user_id = $1 ORDER BY s.installment_number ASC",
                 userId
             );
-        }
 
         Json::Value arr(Json::arrayValue);
         for (auto const& row : result) {

@@ -267,6 +267,59 @@ void AccountController::transfer(
     }
 }
 
+void AccountController::getNotifications(
+    const drogon::HttpRequestPtr& req,
+    std::function<void(const drogon::HttpResponsePtr&)>&& callback
+) {
+    auto userId = req->attributes()->get<std::string>("userId");
+    auto db = drogon::app().getDbClient();
+    if (!db) {
+        auto resp = drogon::HttpResponse::newHttpJsonResponse([](){
+            Json::Value json;
+            json["error"] = "Internal Server Error";
+            json["message"] = "Database connection client unavailable.";
+            return json;
+        }());
+        resp->setStatusCode(drogon::k500InternalServerError);
+        callback(resp);
+        return;
+    }
+
+    try {
+        auto result = db->execSqlSync(
+            "SELECT id, user_id, title, content, type, is_read, created_at "
+            "FROM notifications WHERE user_id = $1 ORDER BY created_at DESC",
+            userId
+        );
+
+        Json::Value arr(Json::arrayValue);
+        for (auto const& row : result) {
+            Json::Value note;
+            note["id"] = row["id"].as<std::string>();
+            note["user_id"] = row["user_id"].as<std::string>();
+            note["title"] = row["title"].as<std::string>();
+            note["content"] = row["content"].as<std::string>();
+            note["type"] = row["type"].as<std::string>();
+            note["is_read"] = row["is_read"].as<bool>();
+            note["created_at"] = row["created_at"].as<std::string>();
+            arr.append(note);
+        }
+
+        auto resp = drogon::HttpResponse::newHttpJsonResponse(arr);
+        callback(resp);
+    } catch (const std::exception& e) {
+        LOG_ERROR << "Failed to fetch notifications: " << e.what();
+        auto resp = drogon::HttpResponse::newHttpJsonResponse([&e](){
+            Json::Value json;
+            json["error"] = "Internal Server Error";
+            json["message"] = e.what();
+            return json;
+        }());
+        resp->setStatusCode(drogon::k500InternalServerError);
+        callback(resp);
+    }
+}
+
 } // namespace banking::controllers
 
 int account_controller_force_link_val = 42;
