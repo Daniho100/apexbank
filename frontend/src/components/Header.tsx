@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Bell } from 'lucide-react';
 import { useBank } from '../context/BankContext';
-import * as bank from '../mockBackend';
+import * as bank from '../api/bankApi';
 
 export const Header: React.FC = () => {
   const { 
@@ -20,13 +20,9 @@ export const Header: React.FC = () => {
   }, [notifications]);
 
   const handleMarkAllRead = () => {
-    const notes = bank.getStorage<bank.Notification[]>('notifications', []);
-    notes.forEach(n => {
-      if (n.user_id === currentUser.id) {
-        n.is_read = true;
-      }
-    });
-    bank.setStorage('notifications', notes);
+    const readKey = `read_notifications_${currentUser.id}`;
+    const readIds = notifications.map(n => n.id);
+    localStorage.setItem(readKey, JSON.stringify(readIds));
     reloadUserData();
   };
 

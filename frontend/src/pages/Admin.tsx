@@ -3,7 +3,7 @@ import {
   Shield, Terminal, Search, UserCheck, UserX, AlertTriangle, Info, BookOpen, Layers
 } from 'lucide-react';
 import { useBank } from '../context/BankContext';
-import * as bank from '../mockBackend';
+import * as bank from '../api/bankApi';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 

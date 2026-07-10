@@ -1,4 +1,4 @@
-// Client-side Banking Engine interface wrapper for production C++ Backend
+// Production C++ Backend REST API client and type mappings
 
 export interface User {
   id: string;
@@ -13,7 +13,7 @@ export interface Account {
   user_id: string;
   account_number: string;
   type: 'savings' | 'checking' | 'merchant';
-  balance: number; // cached balance, ledger is source of truth
+  balance: number;
   status: 'active' | 'frozen' | 'closed';
   currency: string;
   created_at: string;
@@ -126,7 +126,7 @@ export interface Notification {
 }
 
 // -------------------------------------------------------------------------
-// Engine Helper Functions (Maintains local cache for autocomplete directories)
+// Storage Helper Functions (Maintains local cache for autocomplete directories)
 // -------------------------------------------------------------------------
 
 export function getStorage<T>(key: string, defaultValue: T): T {
@@ -136,10 +136,6 @@ export function getStorage<T>(key: string, defaultValue: T): T {
 
 export function setStorage<T>(key: string, value: T): void {
   localStorage.setItem(key, JSON.stringify(value));
-}
-
-export function initializeDb() {
-  // Mock method retained for structure, real db is seeded in PostgreSQL
 }
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';

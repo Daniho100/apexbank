@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import * as bank from '../mockBackend';
+import * as bank from '../api/bankApi';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -150,7 +150,13 @@ export const BankProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const notesRes = await fetch(`${API_URL}/api/notifications`, { headers });
       if (notesRes.ok) {
         const notes = await notesRes.json();
-        setNotifications(notes);
+        const readKey = `read_notifications_${currentUser.id}`;
+        const readIds = JSON.parse(localStorage.getItem(readKey) || '[]');
+        const updatedNotes = notes.map((n: any) => ({
+          ...n,
+          is_read: n.is_read || readIds.includes(n.id)
+        }));
+        setNotifications(updatedNotes);
       }
 
       // 3. Fetch loans

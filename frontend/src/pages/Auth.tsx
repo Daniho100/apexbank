@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useBank } from '../context/BankContext';
-import * as bank from '../mockBackend';
+import * as bank from '../api/bankApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, Loader2, ChevronLeft, Eye, EyeOff } from 'lucide-react';
 

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useBank } from '../context/BankContext';
-import * as bank from '../mockBackend';
+import * as bank from '../api/bankApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldAlert, ArrowRight, X, User, Copy } from 'lucide-react';
 

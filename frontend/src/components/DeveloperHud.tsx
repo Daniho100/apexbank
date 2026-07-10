@@ -1,7 +1,7 @@
 import React from 'react';
 import { Terminal, Code, X } from 'lucide-react';
 import { useBank } from '../context/BankContext';
-import * as bank from '../mockBackend';
+import * as bank from '../api/bankApi';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const btnSecondary = "w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 px-4 rounded-xl transition-all active:scale-[0.98] cursor-pointer";
@@ -91,14 +91,14 @@ export const DeveloperHud: React.FC = () => {
                 {/* Seeding tools */}
                 <div className="flex flex-col gap-3">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Sandbox State Seeds</span>
-                  <div className="grid grid-cols-2 gap-3 text-xs font-semibold">
+                  <div className="grid grid-cols-1 gap-3 text-xs font-semibold">
                     <button 
-                      onClick={() => {
+                      onClick={async () => {
                         try {
-                          bank.registerMerchant(currentUser.id, "Apex Services Ltd", "https://api.merchant.com/callback");
-                          bank.createInvoice(currentUser.id, "123456789", 45000.00, "Web Hosting Payout");
+                          await bank.registerMerchant(currentUser.id, "Apex Services Ltd", "https://api.merchant.com/callback");
+                          await bank.createInvoice(currentUser.id, "123456789", 45000.00, "Web Hosting Payout");
                           showToast('success', 'Merchant profile and invoice generated.');
-                          reloadUserData();
+                          await reloadUserData();
                         } catch(e: any) {
                           showToast('error', e.message);
                         }
@@ -106,23 +106,6 @@ export const DeveloperHud: React.FC = () => {
                       className="py-3 rounded-xl bg-slate-950 hover:bg-slate-850 border border-slate-800 text-slate-300 text-center transition-all cursor-pointer"
                     >
                       Seed Merchant
-                    </button>
-                    <button 
-                      onClick={() => {
-                        bank.initializeDb();
-                        const fds = bank.getStorage<bank.FixedDeposit[]>('fixed_deposits', []);
-                        fds.forEach(f => {
-                          if (f.user_id === currentUser.id) {
-                            f.maturity_date = new Date(new Date().getTime() - 1000).toISOString();
-                          }
-                        });
-                        bank.setStorage('fixed_deposits', fds);
-                        showToast('success', 'Matured certificate simulation triggered.');
-                        reloadUserData();
-                      }}
-                      className="py-3 rounded-xl bg-slate-950 hover:bg-slate-850 border border-slate-800 text-slate-300 text-center transition-all cursor-pointer"
-                    >
-                      Mature Certificates
                     </button>
                   </div>
                 </div>
