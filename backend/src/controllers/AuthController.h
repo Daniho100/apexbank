@@ -5,9 +5,10 @@ namespace banking::controllers {
 
 class AuthController : public drogon::HttpController<AuthController> {
 public:
-    PATH_LIST_BEGIN
-    PATH_ADD("/api/auth");
-    PATH_LIST_END
+    static const std::vector<std::string> &paths() {
+        static const std::vector<std::string> _paths = { "/api/auth" };
+        return _paths;
+    }
 
     METHOD_LIST_BEGIN
     METHOD_ADD(AuthController::registerUser, "/register", drogon::Post);
