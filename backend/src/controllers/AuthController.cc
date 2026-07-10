@@ -233,7 +233,7 @@ void AuthController::loginUser(
         // 4. Save session inside Postgres
         std::string refreshToken = security::TokenManager::generateRefreshToken();
         auto expiryTime = now + std::chrono::hours(24);
-        std::string expiryStr = drogon::utils::getFormattedString(expiryTime, "%Y-%m-%d %H:%M:%S");
+        std::string expiryStr = drogon::utils::formattedString(expiryTime, "%Y-%m-%d %H:%M:%S");
 
         db->execSqlSync(
             "INSERT INTO sessions (user_id, refresh_token, token_expires_at) VALUES ($1, $2, $3::timestamp)",
