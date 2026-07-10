@@ -1,0 +1,37 @@
+{
+  "name": "desktop-shell",
+  "version": "1.0.0",
+  "description": "Electron desktop shell wrapper for Apex Trust Bank",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "package": "electron-builder"
+  },
+  "build": {
+    "appId": "com.apextrust.bank",
+    "productName": "ApexTrustBank",
+    "files": [
+      "main.js",
+      "preload.js",
+      {
+        "from": "../frontend/dist",
+        "to": "frontend-dist"
+      }
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    }
+  },
+  "author": "Apex Architect Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^26.15.3"
+  }
+}

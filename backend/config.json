@@ -1,0 +1,63 @@
+{
+  "listeners": [
+    {
+      "address": "0.0.0.0",
+      "port": 8080,
+      "https": false
+    }
+  ],
+  "db_clients": [
+    {
+      "name": "default",
+      "rdbms": "postgresql",
+      "host": "127.0.0.1",
+      "port": 5433,
+      "dbname": "banking_db",
+      "user": "banking_user",
+      "passwd": "banking_secure_password",
+      "is_fast": true,
+      "connection_number": 20
+    }
+  ],
+  "redis_clients": [
+    {
+      "name": "default",
+      "host": "127.0.0.1",
+      "port": 6380,
+      "passwd": "redis_secure_password",
+      "connection_number": 10
+    }
+  ],
+  "app": {
+    "number_of_threads": 4,
+    "enable_session": false,
+    "document_root": "./",
+    "upload_path": "uploads",
+    "file_types": [
+      "png",
+      "jpg",
+      "pdf"
+    ],
+    "max_connections": 100000,
+    "max_connections_per_ip": 50,
+    "client_max_body_size": 10485760,
+    "client_max_header_size": 8192,
+    "keepalive_requests_number": 100,
+    "pipelining_requests_number": 10,
+    "gzip_static": true,
+    "br_static": true,
+    "cors": {
+      "allow_origin": "*",
+      "allow_methods": "GET,POST,PUT,DELETE,OPTIONS",
+      "allow_headers": "Content-Type,Authorization,Idempotency-Key",
+      "expose_headers": "Idempotency-Key",
+      "max_age": 3600
+    }
+  },
+  "custom_config": {
+    "jwt_access_secret": "banking_super_secret_access_key_2026_jwt_token_98765",
+    "jwt_refresh_secret": "banking_super_secret_refresh_key_2026_jwt_token_43210",
+    "app_pepper": "banking_app_pepper_secure_salt_value_12345",
+    "aes_encryption_key": "banking_aes_256_gcm_secret_key_32_bytes"
+  }
+}
