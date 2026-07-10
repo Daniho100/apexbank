@@ -6,3 +6,5 @@ void AdminController::stub(const drogon::HttpRequestPtr& req, std::function<void
     callback(resp);
 }
 }
+
+int admin_controller_force_link_val = 42;

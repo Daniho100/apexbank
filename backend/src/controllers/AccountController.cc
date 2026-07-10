@@ -6,3 +6,5 @@ void AccountController::stub(const drogon::HttpRequestPtr& req, std::function<vo
     callback(resp);
 }
 }
+
+int account_controller_force_link_val = 42;

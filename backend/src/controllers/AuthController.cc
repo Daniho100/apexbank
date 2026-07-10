@@ -277,3 +277,5 @@ void AuthController::loginUser(
 }
 
 } // namespace banking::controllers
+
+int auth_controller_force_link_val = 42;

@@ -6,3 +6,5 @@ void MerchantController::stub(const drogon::HttpRequestPtr& req, std::function<v
     callback(resp);
 }
 }
+
+int merchant_controller_force_link_val = 42;

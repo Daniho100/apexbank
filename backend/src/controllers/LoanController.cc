@@ -6,3 +6,5 @@ void LoanController::stub(const drogon::HttpRequestPtr& req, std::function<void(
     callback(resp);
 }
 }
+
+int loan_controller_force_link_val = 42;

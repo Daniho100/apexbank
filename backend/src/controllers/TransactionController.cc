@@ -6,3 +6,5 @@ void TransactionController::stub(const drogon::HttpRequestPtr& req, std::functio
     callback(resp);
 }
 }
+
+int transaction_controller_force_link_val = 42;

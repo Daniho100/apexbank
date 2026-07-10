@@ -224,18 +224,28 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    LOG_INFO << "Starting Banking Application MVP web server on port 8080...";
-    
-    // Programmatically register controllers to prevent linker optimization discards in Release builds
-    drogon::app().registerController(std::make_shared<banking::controllers::AuthController>());
-    drogon::app().registerController(std::make_shared<banking::controllers::AccountController>());
-    drogon::app().registerController(std::make_shared<banking::controllers::TransactionController>());
-    drogon::app().registerController(std::make_shared<banking::controllers::LoanController>());
-    drogon::app().registerController(std::make_shared<banking::controllers::FixedDepositController>());
-    drogon::app().registerController(std::make_shared<banking::controllers::BillController>());
-    drogon::app().registerController(std::make_shared<banking::controllers::MerchantController>());
-    drogon::app().registerController(std::make_shared<banking::controllers::AdminController>());
+    // Declare extern force-link variables defined in controller implementation files
+    extern int auth_controller_force_link_val;
+    extern int account_controller_force_link_val;
+    extern int transaction_controller_force_link_val;
+    extern int loan_controller_force_link_val;
+    extern int fixed_deposit_controller_force_link_val;
+    extern int bill_controller_force_link_val;
+    extern int merchant_controller_force_link_val;
+    extern int admin_controller_force_link_val;
 
+    // Read the variables to force the linker to preserve the controller object files
+    volatile int dummy = 0;
+    dummy += auth_controller_force_link_val;
+    dummy += account_controller_force_link_val;
+    dummy += transaction_controller_force_link_val;
+    dummy += loan_controller_force_link_val;
+    dummy += fixed_deposit_controller_force_link_val;
+    dummy += bill_controller_force_link_val;
+    dummy += merchant_controller_force_link_val;
+    dummy += admin_controller_force_link_val;
+
+    LOG_INFO << "Starting Banking Application MVP web server on port 8080...";
     drogon::app().run();
     return 0;
 }

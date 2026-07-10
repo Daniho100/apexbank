@@ -6,3 +6,5 @@ void BillController::stub(const drogon::HttpRequestPtr& req, std::function<void(
     callback(resp);
 }
 }
+
+int bill_controller_force_link_val = 42;
