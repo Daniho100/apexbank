@@ -1,6 +1,7 @@
 #include "MerchantManager.h"
 #include "LedgerService.h"
 #include "security/TokenManager.h"
+#include <random>
 #include <openssl/rand.h>
 #include <openssl/hmac.h>
 #include <openssl/evp.h>

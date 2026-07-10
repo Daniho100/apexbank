@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <drogon/drogon.h>
+#include <drogon/WebSocketConnection.h>
 #include <json/json.h>
 
 namespace banking::services {

@@ -1,4 +1,5 @@
 #include "NotificationService.h"
+#include <drogon/WebSocketConnection.h>
 #include <mutex>
 #include <unordered_map>
 #include <iostream>
