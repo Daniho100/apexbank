@@ -15,8 +15,8 @@
       "dbname": "banking_db",
       "user": "banking_user",
       "passwd": "banking_secure_password",
-      "is_fast": true,
-      "connection_number": 20
+      "is_fast": false,
+      "connection_number": 5
     }
   ],
   "redis_clients": [
@@ -25,7 +25,7 @@
       "host": "127.0.0.1",
       "port": 6380,
       "passwd": "redis_secure_password",
-      "connection_number": 10
+      "connection_number": 5
     }
   ],
   "app": {
