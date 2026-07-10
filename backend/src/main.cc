@@ -3,6 +3,14 @@
 #include <fstream>
 #include <cstdlib>
 #include <iostream>
+#include "controllers/AuthController.h"
+#include "controllers/AccountController.h"
+#include "controllers/TransactionController.h"
+#include "controllers/LoanController.h"
+#include "controllers/FixedDepositController.h"
+#include "controllers/BillController.h"
+#include "controllers/MerchantController.h"
+#include "controllers/AdminController.h"
 
 void resolveConfig(const std::string& inputPath, const std::string& outputPath) {
     std::ifstream infile(inputPath);
@@ -217,6 +225,17 @@ int main(int argc, char* argv[]) {
     }
     
     LOG_INFO << "Starting Banking Application MVP web server on port 8080...";
+    
+    // Programmatically register controllers to prevent linker optimization discards in Release builds
+    drogon::app().registerController(std::make_shared<banking::controllers::AuthController>());
+    drogon::app().registerController(std::make_shared<banking::controllers::AccountController>());
+    drogon::app().registerController(std::make_shared<banking::controllers::TransactionController>());
+    drogon::app().registerController(std::make_shared<banking::controllers::LoanController>());
+    drogon::app().registerController(std::make_shared<banking::controllers::FixedDepositController>());
+    drogon::app().registerController(std::make_shared<banking::controllers::BillController>());
+    drogon::app().registerController(std::make_shared<banking::controllers::MerchantController>());
+    drogon::app().registerController(std::make_shared<banking::controllers::AdminController>());
+
     drogon::app().run();
     return 0;
 }
