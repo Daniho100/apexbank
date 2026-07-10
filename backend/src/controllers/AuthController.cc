@@ -14,7 +14,7 @@ void AuthController::registerUser(
 ) {
     auto jsonPtr = req->getJsonObject();
     if (!jsonPtr) {
-        auto resp = drogon::HttpResponse::newJsonHttpResponse([](){
+        auto resp = drogon::HttpResponse::newHttpJsonResponse([](){
             Json::Value json;
             json["error"] = "Bad Request";
             json["message"] = "Invalid or empty JSON payload.";
@@ -31,7 +31,7 @@ void AuthController::registerUser(
     std::string role = reqJson.get("role", "customer").asString();
 
     if (email.empty() || password.empty()) {
-        auto resp = drogon::HttpResponse::newJsonHttpResponse([](){
+        auto resp = drogon::HttpResponse::newHttpJsonResponse([](){
             Json::Value json;
             json["error"] = "Bad Request";
             json["message"] = "Email and password are required fields.";
@@ -44,7 +44,7 @@ void AuthController::registerUser(
 
     auto db = drogon::app().getDbClient();
     if (!db) {
-        auto resp = drogon::HttpResponse::newJsonHttpResponse([](){
+        auto resp = drogon::HttpResponse::newHttpJsonResponse([](){
             Json::Value json;
             json["error"] = "Internal Server Error";
             json["message"] = "Database connection client unavailable.";
@@ -59,7 +59,7 @@ void AuthController::registerUser(
         // 1. Check if email already exists
         auto checkRes = db->execSqlSync("SELECT id FROM users WHERE email = $1", email);
         if (!checkRes.empty()) {
-            auto resp = drogon::HttpResponse::newJsonHttpResponse([](){
+            auto resp = drogon::HttpResponse::newHttpJsonResponse([](){
                 Json::Value json;
                 json["error"] = "Conflict";
                 json["message"] = "This email is already registered.";
@@ -97,7 +97,7 @@ void AuthController::registerUser(
 
         trans->execSqlSync("COMMIT");
 
-        auto resp = drogon::HttpResponse::newJsonHttpResponse([&](){
+        auto resp = drogon::HttpResponse::newHttpJsonResponse([&](){
             Json::Value json;
             json["message"] = "User registered successfully.";
             json["account_number"] = accountNo;
@@ -107,7 +107,7 @@ void AuthController::registerUser(
         callback(resp);
     } catch (const std::exception& e) {
         LOG_ERROR << "Registration exception: " << e.what();
-        auto resp = drogon::HttpResponse::newJsonHttpResponse([&](){
+        auto resp = drogon::HttpResponse::newHttpJsonResponse([&](){
             Json::Value json;
             json["error"] = "Internal Server Error";
             json["message"] = e.what();
@@ -124,7 +124,7 @@ void AuthController::loginUser(
 ) {
     auto jsonPtr = req->getJsonObject();
     if (!jsonPtr) {
-        auto resp = drogon::HttpResponse::newJsonHttpResponse([](){
+        auto resp = drogon::HttpResponse::newHttpJsonResponse([](){
             Json::Value json;
             json["error"] = "Bad Request";
             json["message"] = "Invalid or empty JSON payload.";
@@ -140,7 +140,7 @@ void AuthController::loginUser(
     std::string password = reqJson.get("password", "").asString();
 
     if (email.empty() || password.empty()) {
-        auto resp = drogon::HttpResponse::newJsonHttpResponse([](){
+        auto resp = drogon::HttpResponse::newHttpJsonResponse([](){
             Json::Value json;
             json["error"] = "Bad Request";
             json["message"] = "Email and password are required fields.";
@@ -153,7 +153,7 @@ void AuthController::loginUser(
 
     auto db = drogon::app().getDbClient();
     if (!db) {
-        auto resp = drogon::HttpResponse::newJsonHttpResponse([](){
+        auto resp = drogon::HttpResponse::newHttpJsonResponse([](){
             Json::Value json;
             json["error"] = "Internal Server Error";
             json["message"] = "Database connection client unavailable.";
@@ -171,7 +171,7 @@ void AuthController::loginUser(
             email
         );
         if (userRes.empty()) {
-            auto resp = drogon::HttpResponse::newJsonHttpResponse([](){
+            auto resp = drogon::HttpResponse::newHttpJsonResponse([](){
                 Json::Value json;
                 json["error"] = "Unauthorized";
                 json["message"] = "Invalid email address or passcode.";
@@ -189,7 +189,7 @@ void AuthController::loginUser(
         std::string hash = user["password_hash"].as<std::string>();
 
         if (status != "active") {
-            auto resp = drogon::HttpResponse::newJsonHttpResponse([&](){
+            auto resp = drogon::HttpResponse::newHttpJsonResponse([&](){
                 Json::Value json;
                 json["error"] = "Forbidden";
                 json["message"] = "Your user registry profile is frozen or locked. Contact administrator.";
@@ -205,7 +205,7 @@ void AuthController::loginUser(
         bool isVerified = security::Argon2Hasher::verifyPassword(hash, password, pepper);
         
         if (!isVerified) {
-            auto resp = drogon::HttpResponse::newJsonHttpResponse([](){
+            auto resp = drogon::HttpResponse::newHttpJsonResponse([](){
                 Json::Value json;
                 json["error"] = "Unauthorized";
                 json["message"] = "Invalid email address or passcode.";
@@ -241,7 +241,7 @@ void AuthController::loginUser(
         );
 
         // 5. Return payload
-        auto resp = drogon::HttpResponse::newJsonHttpResponse([&](){
+        auto resp = drogon::HttpResponse::newHttpJsonResponse([&](){
             Json::Value json;
             json["token"] = token;
             json["user"]["id"] = userId;
@@ -254,7 +254,7 @@ void AuthController::loginUser(
         callback(resp);
     } catch (const std::exception& e) {
         LOG_ERROR << "Login exception: " << e.what();
-        auto resp = drogon::HttpResponse::newJsonHttpResponse([&](){
+        auto resp = drogon::HttpResponse::newHttpJsonResponse([&](){
             Json::Value json;
             json["error"] = "Internal Server Error";
             json["message"] = e.what();

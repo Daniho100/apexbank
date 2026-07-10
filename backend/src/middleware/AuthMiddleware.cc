@@ -12,7 +12,7 @@ void AuthMiddleware::doFilter(
     // 1. Get Authorization Header
     std::string authHeader = req->getHeader("Authorization");
     if (authHeader.empty()) {
-        auto resp = drogon::HttpResponse::newJsonHttpResponse(
+        auto resp = drogon::HttpResponse::newHttpJsonResponse(
             []() {
                 Json::Value json;
                 json["error"] = "Unauthorized";
@@ -27,7 +27,7 @@ void AuthMiddleware::doFilter(
 
     // Check Bearer prefix
     if (authHeader.size() < 7 || authHeader.substr(0, 7) != "Bearer ") {
-        auto resp = drogon::HttpResponse::newJsonHttpResponse(
+        auto resp = drogon::HttpResponse::newHttpJsonResponse(
             []() {
                 Json::Value json;
                 json["error"] = "Unauthorized";
@@ -49,7 +49,7 @@ void AuthMiddleware::doFilter(
     // 3. Verify Token
     auto payloadOpt = security::TokenManager::verifyAccessToken(token, secret);
     if (!payloadOpt.has_value()) {
-        auto resp = drogon::HttpResponse::newJsonHttpResponse(
+        auto resp = drogon::HttpResponse::newHttpJsonResponse(
             []() {
                 Json::Value json;
                 json["error"] = "Unauthorized";

@@ -12,10 +12,14 @@ void RateLimitMiddleware::doFilter(
     std::string key = "";
     
     // 1. Identify client: check if authenticated userId attribute exists
-    auto userIdPtr = req->attributes()->get<std::string>("userId");
-    if (userIdPtr != nullptr && !userIdPtr->empty()) {
-        key = "rl_user:" + *userIdPtr;
-    } else {
+    if (req->attributes()->find("userId")) {
+        std::string userId = req->attributes()->get<std::string>("userId");
+        if (!userId.empty()) {
+            key = "rl_user:" + userId;
+        }
+    }
+    
+    if (key.empty()) {
         // Fallback to peer IP address
         key = "rl_ip:" + req->peerAddr().toIp();
     }
@@ -25,7 +29,7 @@ void RateLimitMiddleware::doFilter(
     int windowSeconds = 60;
     
     if (!security::RateLimiter::isAllowed(key, maxRequests, windowSeconds)) {
-        auto resp = drogon::HttpResponse::newJsonHttpResponse(
+        auto resp = drogon::HttpResponse::newHttpJsonResponse(
             []() {
                 Json::Value json;
                 json["error"] = "Too Many Requests";

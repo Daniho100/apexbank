@@ -20,7 +20,7 @@ void IdempotencyMiddleware::doFilter(
     // 2. Extract Idempotency-Key header
     std::string idempotencyKey = req->getHeader("Idempotency-Key");
     if (idempotencyKey.empty()) {
-        auto resp = drogon::HttpResponse::newJsonHttpResponse(
+        auto resp = drogon::HttpResponse::newHttpJsonResponse(
             []() {
                 Json::Value json;
                 json["error"] = "Bad Request";
@@ -51,7 +51,7 @@ void IdempotencyMiddleware::doFilter(
             payload["message"] = "Duplicate transaction request (idempotent response)";
         }
         
-        auto resp = drogon::HttpResponse::newJsonHttpResponse(payload);
+        auto resp = drogon::HttpResponse::newHttpJsonResponse(payload);
         // Add header to tell the client this was a cached response
         resp->addHeader("X-Cache-Idempotent", "true");
         resp->addHeader("Idempotency-Key", idempotencyKey);
