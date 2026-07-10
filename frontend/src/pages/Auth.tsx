@@ -8,6 +8,8 @@ const inputClass = "w-full bg-slate-950/80 border border-slate-800 rounded-xl pl
 const labelClass = "block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 text-left";
 const btnPrimary = "w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-3.5 px-4 rounded-2xl transition-all shadow-lg shadow-orange-500/25 active:scale-[0.98] text-center text-sm cursor-pointer border border-orange-500/10 flex items-center justify-center gap-2";
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
 export const Auth: React.FC = () => {
   const { setCurrentUser, showToast, logSecurity } = useBank();
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -32,7 +34,7 @@ export const Auth: React.FC = () => {
 
     try {
       if (authMode === 'register') {
-        const res = await fetch('http://localhost:8080/api/auth/register', {
+        const res = await fetch(`${API_URL}/api/auth/register`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -84,7 +86,7 @@ export const Auth: React.FC = () => {
       }
 
       // Login flow
-      const res = await fetch('http://localhost:8080/api/auth/login', {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
