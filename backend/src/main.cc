@@ -246,6 +246,32 @@ int main(int argc, char* argv[]) {
     dummy += admin_controller_force_link_val;
 
     LOG_INFO << "Starting Banking Application MVP web server on port 8080...";
+    
+    // Register global CORS support
+    drogon::app().registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req, drogon::AdviceCallback &&acb, drogon::AdviceChainCallback &&callback) {
+        if (req->method() == drogon::HttpMethod::Options) {
+            auto resp = drogon::HttpResponse::newHttpResponse();
+            resp->setStatusCode(drogon::k200OK);
+            resp->addHeader("Access-Control-Allow-Origin", "*");
+            resp->addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            resp->addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Idempotency-Key");
+            resp->addHeader("Access-Control-Max-Age", "3600");
+            acb(resp);
+            return;
+        }
+        callback();
+    });
+
+    drogon::app().registerPostHandlingAdvice([](const drogon::HttpRequestPtr &req, const drogon::HttpResponsePtr &resp) {
+        resp->addHeader("Access-Control-Allow-Origin", "*");
+        resp->addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        resp->addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Idempotency-Key");
+        resp->addHeader("Access-Control-Expose-Headers", "Idempotency-Key");
+    });
+
+    drogon::app().registerBeginningAdvice([](){
+        banking::controllers::AccountController::runMigrations();
+    });
     drogon::app().run();
     return 0;
 }

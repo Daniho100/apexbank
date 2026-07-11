@@ -21,6 +21,7 @@ export const Loans: React.FC = () => {
 
   const [loanAmount, setLoanAmount] = useState('');
   const [loanDuration, setLoanDuration] = useState('12');
+  const [loanName, setLoanName] = useState('');
   const [activeLoanId, setActiveLoanId] = useState('');
   const [loanRepayAmount, setLoanRepayAmount] = useState('');
 
@@ -47,9 +48,10 @@ export const Loans: React.FC = () => {
       const amt = parseFloat(loanAmount);
       const months = parseInt(loanDuration);
       const rate = getLoanRate(loanDuration);
-      await bank.applyLoan(currentUser.id, amt, months, rate);
+      await bank.applyLoan(currentUser.id, amt, months, rate, loanName || 'Personal Loan');
       showToast('success', 'Loan request submitted for processing.');
       setLoanAmount('');
+      setLoanName('');
       await reloadUserData();
     } catch (err: any) {
       showToast('error', err.message);
@@ -99,6 +101,17 @@ export const Loans: React.FC = () => {
               />
             </div>
             <div>
+              <label className={labelClass}>Loan Purpose / Name</label>
+              <input 
+                type="text" 
+                value={loanName}
+                onChange={e => setLoanName(e.target.value)}
+                className={inputClass}
+                placeholder="e.g. Home Reno, Business Expansion"
+                disabled={hasDefaultedLoan}
+              />
+            </div>
+            <div>
               <label className={labelClass}>Loan Amortization Duration</label>
               <select 
                 value={loanDuration}
@@ -135,7 +148,7 @@ export const Loans: React.FC = () => {
                 <option value="">Select loan to pay</option>
                 {loansList.filter(l => l.status === 'active' || l.status === 'defaulted').map(l => (
                   <option key={l.id} value={l.id}>
-                    ID: {l.id.slice(0,8)}... | Outstanding: {l.outstanding_balance.toLocaleString()} NGN
+                    {l.name || 'Personal Loan'} ({l.reference_number || l.id.slice(0,8)}) | Outstanding: {l.outstanding_balance.toLocaleString()} NGN
                   </option>
                 ))}
               </select>
@@ -168,7 +181,9 @@ export const Loans: React.FC = () => {
               <div key={loan.id} className="border border-slate-800 rounded-2xl p-5 bg-slate-950/40 flex flex-col gap-4">
                 <div className="flex justify-between items-center border-b border-slate-850 pb-4">
                   <div>
-                    <span className="text-[10px] text-slate-500 font-mono block">CREDIT LINE ID: {loan.id}</span>
+                    <span className="text-[10px] text-slate-500 font-mono block">
+                      CREDIT LINE: {loan.name || 'Personal Loan'} ({loan.reference_number || loan.id})
+                    </span>
                     <span className="text-base font-bold text-slate-200 mt-1 block">
                       Remaining Balance: {loan.outstanding_balance.toLocaleString()} NGN (Principal: {loan.amount.toLocaleString()} NGN)
                     </span>

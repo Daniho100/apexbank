@@ -28,11 +28,11 @@ void LoanController::getLoans(
     try {
         auto result = (role == "administrator") ?
             db->execSqlSync(
-                "SELECT id, user_id, amount, interest_rate, duration_months, monthly_repayment, outstanding_balance, status, approved_at, disbursed_at, due_date, created_at "
+                "SELECT id, user_id, amount, interest_rate, duration_months, monthly_repayment, outstanding_balance, status, approved_at, disbursed_at, due_date, name, reference_number, created_at "
                 "FROM loans ORDER BY created_at DESC"
             ) :
             db->execSqlSync(
-                "SELECT id, user_id, amount, interest_rate, duration_months, monthly_repayment, outstanding_balance, status, approved_at, disbursed_at, due_date, created_at "
+                "SELECT id, user_id, amount, interest_rate, duration_months, monthly_repayment, outstanding_balance, status, approved_at, disbursed_at, due_date, name, reference_number, created_at "
                 "FROM loans WHERE user_id = $1 ORDER BY created_at DESC",
                 userId
             );
@@ -51,6 +51,8 @@ void LoanController::getLoans(
             loan["approved_at"] = row["approved_at"].isNull() ? "" : row["approved_at"].as<std::string>();
             loan["disbursed_at"] = row["disbursed_at"].isNull() ? "" : row["disbursed_at"].as<std::string>();
             loan["due_date"] = row["due_date"].isNull() ? "" : row["due_date"].as<std::string>();
+            loan["name"] = row["name"].isNull() ? "Personal Loan" : row["name"].as<std::string>();
+            loan["reference_number"] = row["reference_number"].isNull() ? "" : row["reference_number"].as<std::string>();
             loan["created_at"] = row["created_at"].as<std::string>();
             arr.append(loan);
         }
@@ -107,8 +109,14 @@ void LoanController::apply(
         return;
     }
 
+    std::string name = reqJson.get("name", "Personal Loan").asString();
+    if (name.empty()) {
+        name = "Personal Loan";
+    }
+    double interestRate = reqJson.get("interest_rate", 10.0).asDouble();
+
     try {
-        auto res = services::LoanEngine::applyForLoan(userId, amount, duration, 10.0);
+        auto res = services::LoanEngine::applyForLoan(userId, amount, duration, interestRate, name);
         auto resp = drogon::HttpResponse::newHttpJsonResponse(res);
         callback(resp);
     } catch (const std::exception& e) {

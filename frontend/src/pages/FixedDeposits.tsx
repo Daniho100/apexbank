@@ -49,6 +49,9 @@ export const FixedDeposits: React.FC = () => {
 
   const handleLiquidateFD = async (fdId: string) => {
     if (!currentUser) return;
+    if (!window.confirm("Are you sure you want to liquidate this Fixed Deposit Certificate early? A 10% early liquidation penalty will be deducted from your principal.")) {
+      return;
+    }
     try {
       await bank.earlyWithdrawFixedDeposit(fdId, currentUser.id);
       showToast('success', 'Certificate early liquidated.');
@@ -69,7 +72,7 @@ export const FixedDeposits: React.FC = () => {
               Open fixed-duration deposit certificates lock selected funds in a secure treasury account earning **up to 18.00% APR** compounding interest.
             </p>
             <p className="text-slate-500 text-xs mt-3 leading-relaxed">
-              💡 *Liquidation policy: Early withdrawals before maturity date apply a 50% interest yield reduction penalty.*
+              💡 *Liquidation policy: Early withdrawals before maturity date apply a 10% principal deduction penalty.*
             </p>
           </div>
           

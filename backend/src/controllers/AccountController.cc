@@ -2,8 +2,39 @@
 #include "services/LedgerService.h"
 #include <drogon/drogon.h>
 #include <json/json.h>
+#include <mutex>
+#include <random>
+#include <sstream>
 
 namespace banking::controllers {
+
+static std::once_flag initFlag;
+
+void AccountController::runMigrations() {
+    auto db = drogon::app().getDbClient();
+    if (db) {
+        try {
+            db->execSqlSync("ALTER TABLE loans ADD COLUMN IF NOT EXISTS name VARCHAR(255) NOT NULL DEFAULT 'Personal Loan'");
+            db->execSqlSync("ALTER TABLE loans ADD COLUMN IF NOT EXISTS reference_number VARCHAR(100) UNIQUE");
+            
+            // Backfill reference_number for existing loans if any
+            auto res = db->execSqlSync("SELECT id FROM loans WHERE reference_number IS NULL");
+            for (auto const& row : res) {
+                std::string id = row["id"].as<std::string>();
+                std::random_device rd;
+                std::mt19937 gen(rd());
+                std::uniform_int_distribution<> dis(100000, 999999);
+                std::string ref = "LN-" + std::to_string(dis(gen));
+                db->execSqlSync("UPDATE loans SET reference_number = $1 WHERE id = $2", ref, id);
+            }
+            
+            db->execSqlSync("ALTER TABLE loans ALTER COLUMN reference_number SET NOT NULL");
+            db->execSqlSync("CREATE UNIQUE INDEX IF NOT EXISTS idx_loans_reference ON loans(reference_number)");
+        } catch (const std::exception& e) {
+            LOG_ERROR << "Failed to run DB migrations: " << e.what();
+        }
+    }
+}
 
 void AccountController::getAccounts(
     const drogon::HttpRequestPtr& req,

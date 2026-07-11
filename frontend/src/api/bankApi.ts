@@ -24,11 +24,11 @@ export interface Transaction {
   type: string;
   amount: number;
   status: 'pending' | 'completed' | 'failed' | 'reversed';
-  idempotency_key: string;
-  sender_account_id: string;
-  receiver_account_id: string;
-  reference_number: string;
-  description: string;
+  idempotency_key?: string | null;
+  sender_account_id?: string | null;
+  receiver_account_id?: string | null;
+  reference_number?: string | null;
+  description?: string | null;
   created_at: string;
 }
 
@@ -52,6 +52,8 @@ export interface Loan {
   monthly_repayment: number;
   outstanding_balance: number;
   status: 'pending' | 'approved' | 'active' | 'completed' | 'defaulted';
+  name?: string;
+  reference_number?: string;
   created_at: string;
 }
 
@@ -110,6 +112,7 @@ export interface MerchantInvoice {
 export interface AuditLog {
   id: string;
   user_id: string;
+  user_email?: string;
   action: string;
   description: string;
   ip_address: string;
@@ -188,10 +191,10 @@ export async function processTransfer(senderNo: string, receiverNo: string, amou
   });
 }
 
-export async function applyLoan(_userId: string, amount: number, duration: number, rate = 10) {
+export async function applyLoan(_userId: string, amount: number, duration: number, rate = 10, name = 'Personal Loan') {
   return apiRequest('/api/loans/apply', {
     method: 'POST',
-    body: JSON.stringify({ amount, duration_months: duration, interest_rate: rate })
+    body: JSON.stringify({ amount, duration_months: duration, interest_rate: rate, name })
   });
 }
 

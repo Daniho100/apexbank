@@ -4,6 +4,9 @@
 #include <fstream>
 #include <cstdlib>
 #include <iostream>
+#include <thread>
+#include <chrono>
+#include <random>
 
 void resolveConfig(const std::string& inputPath, const std::string& outputPath) {
     std::ifstream infile(inputPath);
@@ -191,6 +194,7 @@ void resolveConfig(const std::string& inputPath, const std::string& outputPath) 
 }
 
 int main(int argc, char **argv) {
+    trantor::Logger::setLogLevel(trantor::Logger::kDebug);
     testing::InitGoogleTest(&argc, argv);
     
     // Resolve dynamic configurations for container isolation
@@ -214,5 +218,43 @@ int main(int argc, char **argv) {
         }
     }
     
-    return RUN_ALL_TESTS();
+    std::thread thr([](){
+        drogon::app().run();
+    });
+    
+    // Wait for DB client to initialize
+    int attempts = 0;
+    while (!drogon::app().getDbClient() && attempts < 100) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        attempts++;
+    }
+
+    auto db = drogon::app().getDbClient();
+    if (db) {
+        try {
+            db->execSqlSync("ALTER TABLE loans ADD COLUMN IF NOT EXISTS name VARCHAR(255) NOT NULL DEFAULT 'Personal Loan'");
+            db->execSqlSync("ALTER TABLE loans ADD COLUMN IF NOT EXISTS reference_number VARCHAR(100) UNIQUE");
+            auto res = db->execSqlSync("SELECT id FROM loans WHERE reference_number IS NULL");
+            for (auto const& row : res) {
+                std::string id = row["id"].as<std::string>();
+                std::random_device rd;
+                std::mt19937 gen(rd());
+                std::uniform_int_distribution<> dis(100000, 999999);
+                std::string ref = "LN-" + std::to_string(dis(gen));
+                db->execSqlSync("UPDATE loans SET reference_number = $1 WHERE id = $2", ref, id);
+            }
+            db->execSqlSync("ALTER TABLE loans ALTER COLUMN reference_number SET NOT NULL");
+            db->execSqlSync("CREATE UNIQUE INDEX IF NOT EXISTS idx_loans_reference ON loans(reference_number)");
+        } catch (const std::exception& e) {
+            std::cerr << "Failed to run DB migrations in tests: " << e.what() << std::endl;
+        }
+    }
+    
+    int ret = RUN_ALL_TESTS();
+    
+    drogon::app().quit();
+    if (thr.joinable()) {
+        thr.join();
+    }
+    return ret;
 }

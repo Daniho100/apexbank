@@ -71,16 +71,16 @@ void TransactionController::getTransactions(
         Json::Value arr(Json::arrayValue);
         for (auto const& row : result) {
             Json::Value t;
-            t["id"] = row["id"].as<std::string>();
-            t["type"] = row["type"].as<std::string>();
-            t["amount"] = row["amount"].as<double>();
-            t["status"] = row["status"].as<std::string>();
-            t["idempotency_key"] = row["idempotency_key"].as<std::string>();
-            t["sender_account_id"] = row["sender_account_id"].as<std::string>();
-            t["receiver_account_id"] = row["receiver_account_id"].as<std::string>();
-            t["reference_number"] = row["reference_number"].as<std::string>();
-            t["description"] = row["description"].as<std::string>();
-            t["created_at"] = row["created_at"].as<std::string>();
+            t["id"] = row["id"].isNull() ? "" : row["id"].as<std::string>();
+            t["type"] = row["type"].isNull() ? "" : row["type"].as<std::string>();
+            t["amount"] = row["amount"].isNull() ? 0.0 : row["amount"].as<double>();
+            t["status"] = row["status"].isNull() ? "" : row["status"].as<std::string>();
+            t["idempotency_key"] = row["idempotency_key"].isNull() ? "" : row["idempotency_key"].as<std::string>();
+            t["sender_account_id"] = row["sender_account_id"].isNull() ? "" : row["sender_account_id"].as<std::string>();
+            t["receiver_account_id"] = row["receiver_account_id"].isNull() ? "" : row["receiver_account_id"].as<std::string>();
+            t["reference_number"] = row["reference_number"].isNull() ? "" : row["reference_number"].as<std::string>();
+            t["description"] = row["description"].isNull() ? "" : row["description"].as<std::string>();
+            t["created_at"] = row["created_at"].isNull() ? "" : row["created_at"].as<std::string>();
             arr.append(t);
         }
 

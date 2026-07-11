@@ -105,7 +105,7 @@ bool LoanEngine::checkEligibility(const std::string& userId, std::string& outRea
     }
 }
 
-Json::Value LoanEngine::applyForLoan(const std::string& userId, double amount, int durationMonths, double annualRate) {
+Json::Value LoanEngine::applyForLoan(const std::string& userId, double amount, int durationMonths, double annualRate, const std::string& name) {
     if (amount <= 0.0 || durationMonths <= 0) {
         throw std::invalid_argument("Invalid loan amount or duration.");
     }
@@ -122,16 +122,19 @@ Json::Value LoanEngine::applyForLoan(const std::string& userId, double amount, i
     double monthlyRepayment = calculateEMI(amount, annualRate, durationMonths);
     
     std::string loanId = drogon::utils::getUuid();
+    std::string referenceNumber = LedgerService::generateReference("LN");
     db->execSqlSync(
-        "INSERT INTO loans (id, user_id, amount, interest_rate, duration_months, monthly_repayment, outstanding_balance, status) "
-        "VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')",
+        "INSERT INTO loans (id, user_id, amount, interest_rate, duration_months, monthly_repayment, outstanding_balance, status, name, reference_number) "
+        "VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', $8, $9)",
         loanId,
         userId,
         amount,
         annualRate,
         durationMonths,
         monthlyRepayment,
-        amount
+        amount,
+        name,
+        referenceNumber
     );
     
     // Log audit event
@@ -200,15 +203,11 @@ Json::Value LoanEngine::approveAndDisburse(const std::string& loanId, const std:
         std::string treasuryAccountId = treasRow["id"].as<std::string>();
         double currentTreasBalance = treasRow["balance"].as<double>();
         
-        // 4. Update Loan state to disbursed/active
-        trans->execSqlSync(
-            "UPDATE loans SET status = 'active', approved_at = CURRENT_TIMESTAMP, disbursed_at = CURRENT_TIMESTAMP WHERE id = $1",
-            loanId
-        );
-        
-        // 5. Generate schedules in DB
+        // 5. Generate schedules in DB and calculate total outstanding (principal + interest)
         auto schedules = generateSchedule(amount, rate, duration);
+        double totalOutstanding = 0.0;
         for (const auto& inst : schedules) {
+            totalOutstanding += inst.total;
             trans->execSqlSync(
                 "INSERT INTO loan_schedules (loan_id, installment_number, amount_due, principal_due, interest_due, status, due_date) "
                 "VALUES ($1, $2, $3, $4, $5, 'unpaid', $6)",
@@ -220,6 +219,12 @@ Json::Value LoanEngine::approveAndDisburse(const std::string& loanId, const std:
                 inst.dueDate
             );
         }
+        
+        // 4. Update Loan state to disbursed/active and set outstanding_balance to total (principal + interest)
+        trans->execSqlSync(
+            "UPDATE loans SET status = 'active', outstanding_balance = $1, approved_at = CURRENT_TIMESTAMP, disbursed_at = CURRENT_TIMESTAMP WHERE id = $2",
+            totalOutstanding, loanId
+        );
         
         // 6. Double-entry ledger processing (Treasury pays customer)
         double newCustBalance = currentBalance + amount;
@@ -361,8 +366,13 @@ double LoanEngine::checkAndAutoDeductOverdue(
         std::string ref = LedgerService::generateReference("LNP");
         std::string desc = "Auto-deduction for overdue installment " + std::to_string(row["installment_number"].as<int>()) + " of Loan " + loanId;
         
+        Json::Value metadataJson;
+        metadataJson["correlation_id"] = correlationId;
+        Json::FastWriter writer;
+        std::string metadataStr = writer.write(metadataJson);
+        
         trans->execSqlSync(
-            "INSERT INTO transactions (id, type, amount, status, idempotency_key, sender_account_id, receiver_account_id, reference_number, description, correlation_id) "
+            "INSERT INTO transactions (id, type, amount, status, idempotency_key, sender_account_id, receiver_account_id, reference_number, description, metadata) "
             "VALUES ($1, 'loan_repayment', $2, 'completed', $3, $4, $5, $6, $7, $8)",
             txnId,
             payment,
@@ -371,7 +381,7 @@ double LoanEngine::checkAndAutoDeductOverdue(
             treasuryAccountId,
             ref,
             desc,
-            correlationId
+            metadataStr
         );
         
         LedgerService::postLedgerEntry(trans, txnId, accountId, "DEBIT", payment, customerBalance, desc);
@@ -436,15 +446,15 @@ Json::Value LoanEngine::processRepayment(
             throw std::runtime_error("Insufficient funds for loan repayment.");
         }
         
-        // 2. Lock Loan
         auto loanResult = trans->execSqlSync(
-            "SELECT outstanding_balance, status FROM loans WHERE id = $1 AND user_id = $2 FOR UPDATE",
+            "SELECT id, outstanding_balance, status FROM loans WHERE (id::text = $1 OR reference_number = $1) AND user_id = $2 FOR UPDATE",
             loanId, userId
         );
         if (loanResult.empty()) {
             throw std::runtime_error("Loan not found for this user.");
         }
         auto loanRow = loanResult[0];
+        std::string actualLoanId = loanRow["id"].as<std::string>();
         double outstanding = loanRow["outstanding_balance"].as<double>();
         
         if (outstanding <= 0.0 || loanRow["status"].as<std::string>() == "completed") {
@@ -469,7 +479,7 @@ Json::Value LoanEngine::processRepayment(
         std::string newStatus = (newOutstanding <= 0.0) ? "completed" : "active";
         trans->execSqlSync(
             "UPDATE loans SET outstanding_balance = $1, status = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3",
-            newOutstanding, newStatus, loanId
+            newOutstanding, newStatus, actualLoanId
         );
         
         // Fetch unpaid schedules to allocate payment
@@ -477,7 +487,7 @@ Json::Value LoanEngine::processRepayment(
             "SELECT id, amount_due, amount_paid FROM loan_schedules "
             "WHERE loan_id = $1 AND status IN ('unpaid', 'partial', 'overdue') "
             "ORDER BY due_date ASC",
-            loanId
+            actualLoanId
         );
         
         double currentPaymentLeft = payment;
@@ -512,7 +522,7 @@ Json::Value LoanEngine::processRepayment(
         // 5. Create Transaction and Ledger entries
         std::string txnId = drogon::utils::getUuid();
         std::string ref = LedgerService::generateReference("LNP");
-        std::string desc = "Manual loan repayment for loan " + loanId;
+        std::string desc = "Manual loan repayment for loan " + actualLoanId;
         
         Json::Value responseJson;
         responseJson["status"] = "success";

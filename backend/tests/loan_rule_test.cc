@@ -41,7 +41,13 @@ protected:
         auto db = drogon::app().getDbClient();
         if (db) {
             // Clean up dependencies
-            db->execSqlSync("DELETE FROM ledger_entries WHERE account_id = $1 OR account_id IN (SELECT id FROM accounts WHERE user_id = $2)", accountId, testUserId);
+            db->execSqlSync(
+                "DELETE FROM ledger_entries WHERE transaction_id IN ("
+                "  SELECT id FROM transactions WHERE sender_account_id = $1 OR receiver_account_id = $1 "
+                "  OR sender_account_id IN (SELECT id FROM accounts WHERE user_id = $2) "
+                "  OR receiver_account_id IN (SELECT id FROM accounts WHERE user_id = $2)"
+                ")", accountId, testUserId
+            );
             db->execSqlSync("DELETE FROM transactions WHERE sender_account_id = $1 OR receiver_account_id = $1 OR sender_account_id IN (SELECT id FROM accounts WHERE user_id = $2) OR receiver_account_id IN (SELECT id FROM accounts WHERE user_id = $2)", accountId, testUserId);
             db->execSqlSync("DELETE FROM loan_schedules WHERE loan_id IN (SELECT id FROM loans WHERE user_id = $1)", testUserId);
             db->execSqlSync("DELETE FROM loans WHERE user_id = $1", testUserId);

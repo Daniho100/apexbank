@@ -91,6 +91,8 @@ CREATE INDEX IF NOT EXISTS idx_ledger_transaction ON ledger_entries(transaction_
 CREATE TABLE IF NOT EXISTS loans (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE RESTRICT,
+    name VARCHAR(255) NOT NULL DEFAULT 'Personal Loan',
+    reference_number VARCHAR(100) UNIQUE NOT NULL,
     amount NUMERIC(18, 4) NOT NULL,
     interest_rate NUMERIC(5, 2) NOT NULL, -- e.g. 10.00%
     duration_months INT NOT NULL,
@@ -106,6 +108,7 @@ CREATE TABLE IF NOT EXISTS loans (
 
 CREATE INDEX IF NOT EXISTS idx_loans_user ON loans(user_id);
 CREATE INDEX IF NOT EXISTS idx_loans_status ON loans(status);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_loans_reference ON loans(reference_number);
 
 -- 7. Loan Schedules Table
 CREATE TABLE IF NOT EXISTS loan_schedules (

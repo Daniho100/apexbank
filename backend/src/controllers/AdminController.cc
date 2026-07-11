@@ -243,8 +243,9 @@ void AdminController::getAuditLogs(
 
     try {
         auto result = db->execSqlSync(
-            "SELECT id, user_id, action, description, ip_address, created_at FROM audit_logs "
-            "ORDER BY created_at DESC LIMIT 500"
+            "SELECT a.id, a.user_id, u.email, a.action, a.description, a.ip_address, a.created_at "
+            "FROM audit_logs a LEFT JOIN users u ON a.user_id = u.id "
+            "ORDER BY a.created_at DESC LIMIT 500"
         );
 
         Json::Value arr(Json::arrayValue);
@@ -252,6 +253,7 @@ void AdminController::getAuditLogs(
             Json::Value log;
             log["id"] = row["id"].as<std::string>();
             log["user_id"] = row["user_id"].isNull() ? "" : row["user_id"].as<std::string>();
+            log["user_email"] = row["email"].isNull() ? "" : row["email"].as<std::string>();
             log["action"] = row["action"].as<std::string>();
             log["description"] = row["description"].as<std::string>();
             log["ip_address"] = row["ip_address"].isNull() ? "" : row["ip_address"].as<std::string>();
@@ -325,15 +327,15 @@ void AdminController::getUserActivity(
         Json::Value txnsJson(Json::arrayValue);
         for (auto const& row : txnsResult) {
             Json::Value txn;
-            txn["id"] = row["id"].as<std::string>();
-            txn["type"] = row["type"].as<std::string>();
-            txn["amount"] = row["amount"].as<double>();
-            txn["status"] = row["status"].as<std::string>();
-            txn["reference_number"] = row["reference_number"].as<std::string>();
-            txn["description"] = row["description"].as<std::string>();
-            txn["sender_account_id"] = row["sender_account_id"].as<std::string>();
-            txn["receiver_account_id"] = row["receiver_account_id"].as<std::string>();
-            txn["created_at"] = row["created_at"].as<std::string>();
+            txn["id"] = row["id"].isNull() ? "" : row["id"].as<std::string>();
+            txn["type"] = row["type"].isNull() ? "" : row["type"].as<std::string>();
+            txn["amount"] = row["amount"].isNull() ? 0.0 : row["amount"].as<double>();
+            txn["status"] = row["status"].isNull() ? "" : row["status"].as<std::string>();
+            txn["reference_number"] = row["reference_number"].isNull() ? "" : row["reference_number"].as<std::string>();
+            txn["description"] = row["description"].isNull() ? "" : row["description"].as<std::string>();
+            txn["sender_account_id"] = row["sender_account_id"].isNull() ? "" : row["sender_account_id"].as<std::string>();
+            txn["receiver_account_id"] = row["receiver_account_id"].isNull() ? "" : row["receiver_account_id"].as<std::string>();
+            txn["created_at"] = row["created_at"].isNull() ? "" : row["created_at"].as<std::string>();
             txnsJson.append(txn);
         }
 

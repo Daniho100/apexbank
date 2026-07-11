@@ -26,7 +26,7 @@ public:
     static bool checkEligibility(const std::string& userId, std::string& outReason);
 
     // Process a loan application
-    static Json::Value applyForLoan(const std::string& userId, double amount, int durationMonths, double annualRate);
+    static Json::Value applyForLoan(const std::string& userId, double amount, int durationMonths, double annualRate, const std::string& name = "Personal Loan");
 
     // Approve and disburse a loan (admin action)
     static Json::Value approveAndDisburse(const std::string& loanId, const std::string& adminId);

@@ -43,7 +43,11 @@ protected:
     void TearDown() override {
         auto db = drogon::app().getDbClient();
         if (db) {
-            db->execSqlSync("DELETE FROM ledger_entries WHERE account_id IN ($1, $2)", accountIdA, accountIdB);
+            db->execSqlSync(
+                "DELETE FROM ledger_entries WHERE transaction_id IN ("
+                "  SELECT id FROM transactions WHERE sender_account_id IN ($1, $2) OR receiver_account_id IN ($1, $2)"
+                ")", accountIdA, accountIdB
+            );
             db->execSqlSync("DELETE FROM transactions WHERE sender_account_id IN ($1, $2) OR receiver_account_id IN ($1, $2)", accountIdA, accountIdB);
             db->execSqlSync("DELETE FROM accounts WHERE id IN ($1, $2)", accountIdA, accountIdB);
             db->execSqlSync("DELETE FROM users WHERE id IN ($1, $2)", testUserIdA, testUserIdB);

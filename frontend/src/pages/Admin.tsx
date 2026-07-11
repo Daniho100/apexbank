@@ -181,8 +181,9 @@ export const Admin: React.FC = () => {
                   <div key={loan.id} className="bg-slate-950/40 border border-slate-850 rounded-2xl p-4 flex flex-col gap-4">
                     <div>
                       <span className="text-[9px] text-slate-500 font-mono block truncate">USER: {loanUser ? loanUser.email : loan.user_id}</span>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">LOAN: {loan.name || 'Personal Loan'} ({loan.reference_number || loan.id.slice(0,8)})</span>
                       <span className="text-sm font-black text-white block mt-1">{loan.amount.toLocaleString()} NGN</span>
-                      <span className="text-[10px] text-slate-400 block mt-0.5">Term: {loan.duration_months} M | APR: {loan.interest_rate}%</span>
+                      <span className="text-[10px] text-slate-450 block mt-0.5">Term: {loan.duration_months} M | APR: {loan.interest_rate}%</span>
                     </div>
                     <button 
                       onClick={() => handleApproveLoan(loan.id)}
@@ -399,10 +400,12 @@ export const Admin: React.FC = () => {
               </thead>
               <tbody>
                 {auditLogs.map(log => (
-                  <tr key={log.id} className="border-b border-slate-850/50 text-slate-350 hover:bg-slate-855/10 transition-colors">
+                  <tr key={log.id} className="border-b border-slate-850/50 text-slate-355 hover:bg-slate-855/10 transition-colors">
                     <td className="py-3.5 pr-4 font-mono text-[10px] text-slate-500">{new Date(log.created_at).toLocaleString()}</td>
                     <td className="py-3.5 pr-4 uppercase font-black text-[9px] tracking-widest text-blue-400">{log.action}</td>
-                    <td className="py-3.5 pr-4 font-mono text-[10px] text-slate-400 truncate max-w-[120px]">{log.user_id}</td>
+                    <td className="py-3.5 pr-4 font-mono text-[10px] text-slate-400 truncate max-w-[120px]" title={log.user_email || log.user_id}>
+                      {log.user_email || log.user_id}
+                    </td>
                     <td className="py-3.5 pr-4 text-slate-300 text-xs">{log.description}</td>
                     <td className="py-3.5 font-mono text-[10px] text-slate-500">{log.ip_address}</td>
                   </tr>
