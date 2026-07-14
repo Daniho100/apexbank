@@ -82,13 +82,20 @@ Json::Value MerchantManager::registerMerchant(
             apiSalt
         );
         
-        // 4. Create Merchant Wallet Account
-        std::stringstream accSs;
+        // 4. Create Merchant Wallet Account (Ensure it has a unique account number starting with 2)
+        std::string merchantAccNo;
+        bool isUnique = false;
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> dis(100000000, 999999999);
-        accSs << "2" << dis(gen); // Merchant account numbers start with 2
-        std::string merchantAccNo = accSs.str();
+        
+        while (!isUnique) {
+            merchantAccNo = "2" + std::to_string(dis(gen));
+            auto checkRes = trans->execSqlSync("SELECT 1 FROM accounts WHERE account_number = $1", merchantAccNo);
+            if (checkRes.empty()) {
+                isUnique = true;
+            }
+        }
         
         trans->execSqlSync(
             "INSERT INTO accounts (user_id, account_number, type, balance, status, currency) "

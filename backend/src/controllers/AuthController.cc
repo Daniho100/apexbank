@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <iomanip>
 #include <sstream>
+#include <random>
 
 namespace banking::controllers {
 
@@ -86,10 +87,23 @@ void AuthController::registerUser(
         
         std::string userId = userRes[0]["id"].as<std::string>();
 
-        // Generate account number (starts with '1' and has 9 random digits)
-        std::string accountNo = "1";
-        for (int i = 0; i < 9; ++i) {
-            accountNo += std::to_string(std::rand() % 10);
+        // Generate a unique account number (starts with '1' and has 9 random digits)
+        std::string accountNo;
+        bool isUnique = false;
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis(0, 9);
+
+        while (!isUnique) {
+            accountNo = "1";
+            for (int i = 0; i < 9; ++i) {
+                accountNo += std::to_string(dis(gen));
+            }
+            
+            auto checkRes = trans->execSqlSync("SELECT 1 FROM accounts WHERE account_number = $1", accountNo);
+            if (checkRes.empty()) {
+                isUnique = true;
+            }
         }
 
         trans->execSqlSync(
