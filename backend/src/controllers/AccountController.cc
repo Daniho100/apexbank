@@ -14,6 +14,7 @@ void AccountController::runMigrations() {
     auto db = drogon::app().getDbClient();
     if (db) {
         try {
+            db->execSqlSync("ALTER TABLE users ADD COLUMN IF NOT EXISTS loan_limit NUMERIC(18, 4) NOT NULL DEFAULT 1000000.0000");
             db->execSqlSync("ALTER TABLE loans ADD COLUMN IF NOT EXISTS name VARCHAR(255) NOT NULL DEFAULT 'Personal Loan'");
             db->execSqlSync("ALTER TABLE loans ADD COLUMN IF NOT EXISTS reference_number VARCHAR(100) UNIQUE");
             

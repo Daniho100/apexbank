@@ -5,6 +5,7 @@ export interface User {
   email: string;
   role: string;
   status: 'active' | 'frozen' | 'locked';
+  loan_limit: number;
   created_at: string;
 }
 
@@ -268,5 +269,25 @@ export async function setUserStatus(userId: string, status: 'active' | 'frozen' 
   return apiRequest('/api/admin/users/status', {
     method: 'POST',
     body: JSON.stringify({ user_id: userId, status })
+  });
+}
+
+export async function deleteUser(userId: string) {
+  return apiRequest('/api/admin/users/delete', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId })
+  });
+}
+
+export async function updateLoanLimit(userId: string, limit: number) {
+  return apiRequest('/api/admin/users/loan-limit', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, loan_limit: limit })
+  });
+}
+
+export async function fetchSystemStats() {
+  return apiRequest('/api/admin/system-stats', {
+    method: 'GET'
   });
 }

@@ -119,6 +119,35 @@ Json::Value LoanEngine::applyForLoan(const std::string& userId, double amount, i
     }
     
     auto db = drogon::app().getDbClient();
+    if (!db) {
+        throw std::runtime_error("Database connection lost.");
+    }
+
+    // Check user loan limit
+    auto limitResult = db->execSqlSync("SELECT loan_limit FROM users WHERE id = $1", userId);
+    double limit = 1000000.0;
+    if (!limitResult.empty() && !limitResult[0]["loan_limit"].isNull()) {
+        limit = limitResult[0]["loan_limit"].as<double>();
+    }
+    
+    auto outstandingResult = db->execSqlSync(
+        "SELECT SUM(outstanding_balance) as total FROM loans WHERE user_id = $1 AND status IN ('approved', 'disbursed', 'active')",
+        userId
+    );
+    double totalOutstanding = 0.0;
+    if (!outstandingResult.empty() && !outstandingResult[0]["total"].isNull()) {
+        totalOutstanding = outstandingResult[0]["total"].as<double>();
+    }
+    
+    if (totalOutstanding + amount > limit) {
+        Json::Value error;
+        error["status"] = "rejected";
+        error["reason"] = "Requested loan amount exceeds user credit limit (Limit: " + 
+                          std::to_string((int)limit) + " NGN, Outstanding balance: " + 
+                          std::to_string((int)totalOutstanding) + " NGN).";
+        return error;
+    }
+
     double monthlyRepayment = calculateEMI(amount, annualRate, durationMonths);
     
     std::string loanId = drogon::utils::getUuid();

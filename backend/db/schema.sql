@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
     status VARCHAR(50) DEFAULT 'active', -- 'active', 'frozen', 'locked'
     failed_login_attempts INT DEFAULT 0,
     locked_until TIMESTAMP,
+    loan_limit NUMERIC(18, 4) NOT NULL DEFAULT 1000000.0000,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

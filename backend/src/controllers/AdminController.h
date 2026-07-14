@@ -11,6 +11,9 @@ public:
     ADD_METHOD_TO(AdminController::setUserStatus, "/api/admin/users/status", drogon::Post, "banking::middleware::AuthMiddleware");
     ADD_METHOD_TO(AdminController::getAuditLogs, "/api/admin/audit-logs", drogon::Get, "banking::middleware::AuthMiddleware");
     ADD_METHOD_TO(AdminController::getUserActivity, "/api/admin/users/{userId}/activity", drogon::Get, "banking::middleware::AuthMiddleware");
+    ADD_METHOD_TO(AdminController::deleteUser, "/api/admin/users/delete", drogon::Post, "banking::middleware::AuthMiddleware");
+    ADD_METHOD_TO(AdminController::updateLoanLimit, "/api/admin/users/loan-limit", drogon::Post, "banking::middleware::AuthMiddleware");
+    ADD_METHOD_TO(AdminController::getSystemStats, "/api/admin/system-stats", drogon::Get, "banking::middleware::AuthMiddleware");
     METHOD_LIST_END
 
     void approveLoan(const drogon::HttpRequestPtr& req, std::function<void(const drogon::HttpResponsePtr&)>&& callback);
@@ -18,6 +21,9 @@ public:
     void setUserStatus(const drogon::HttpRequestPtr& req, std::function<void(const drogon::HttpResponsePtr&)>&& callback);
     void getAuditLogs(const drogon::HttpRequestPtr& req, std::function<void(const drogon::HttpResponsePtr&)>&& callback);
     void getUserActivity(const drogon::HttpRequestPtr& req, std::function<void(const drogon::HttpResponsePtr&)>&& callback, const std::string& userId);
+    void deleteUser(const drogon::HttpRequestPtr& req, std::function<void(const drogon::HttpResponsePtr&)>&& callback);
+    void updateLoanLimit(const drogon::HttpRequestPtr& req, std::function<void(const drogon::HttpResponsePtr&)>&& callback);
+    void getSystemStats(const drogon::HttpRequestPtr& req, std::function<void(const drogon::HttpResponsePtr&)>&& callback);
 };
 
 } // namespace banking::controllers
