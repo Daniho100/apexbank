@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-   Send, Shield, CreditCard, Percent, Zap, Globe, Award, LogOut 
+   Send, Shield, CreditCard, Percent, Zap, Globe, Award, LogOut, Users, TrendingUp, Terminal 
 } from 'lucide-react';
 import { useBank } from '../context/BankContext';
 
@@ -67,12 +67,32 @@ export const Sidebar: React.FC = () => {
         )}
         
         {currentUser.role === 'administrator' && (
-          <button 
-            onClick={() => setActiveTab('admin')} 
-            className={activeTab === 'admin' ? tabClassActive : tabClassInactive}
-          >
-            <Shield size={18} /> Admin Portal
-          </button>
+          <>
+            <button 
+              onClick={() => setActiveTab('admin-dashboard')} 
+              className={activeTab === 'admin-dashboard' ? tabClassActive : tabClassInactive}
+            >
+              <TrendingUp size={18} /> Dashboard Stats
+            </button>
+            <button 
+              onClick={() => setActiveTab('admin-directory')} 
+              className={activeTab === 'admin-directory' ? tabClassActive : tabClassInactive}
+            >
+              <Users size={18} /> User Directory
+            </button>
+            <button 
+              onClick={() => setActiveTab('admin-approvals')} 
+              className={activeTab === 'admin-approvals' ? tabClassActive : tabClassInactive}
+            >
+              <Shield size={18} /> Loan Approvals
+            </button>
+            <button 
+              onClick={() => setActiveTab('admin-audits')} 
+              className={activeTab === 'admin-audits' ? tabClassActive : tabClassInactive}
+            >
+              <Terminal size={18} /> Security Audits
+            </button>
+          </>
         )}
       </nav>
 

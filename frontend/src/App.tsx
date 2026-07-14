@@ -36,7 +36,10 @@ function AppContent() {
             {activeTab === 'loans' && <Loans />}
             {activeTab === 'utilities' && <Utilities />}
             {activeTab === 'merchant' && <Merchant />}
-            {activeTab === 'admin' && <Admin />}
+            {activeTab === 'admin-dashboard' && <Admin initialTab="dashboard" />}
+            {activeTab === 'admin-directory' && <Admin initialTab="directory" />}
+            {activeTab === 'admin-approvals' && <Admin initialTab="approvals" />}
+            {activeTab === 'admin-audits' && <Admin initialTab="audits" />}
           </main>
         </div>
       </div>

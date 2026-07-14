@@ -6,8 +6,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 interface BankContextType {
   currentUser: bank.User | null;
   setCurrentUser: (user: bank.User | null) => void;
-  activeTab: 'overview' | 'transfers' | 'loans' | 'fixed-deposits' | 'utilities' | 'merchant' | 'admin';
-  setActiveTab: (tab: 'overview' | 'transfers' | 'loans' | 'fixed-deposits' | 'utilities' | 'merchant' | 'admin') => void;
+  activeTab: 'overview' | 'transfers' | 'loans' | 'fixed-deposits' | 'utilities' | 'merchant' | 'admin' | 'admin-dashboard' | 'admin-directory' | 'admin-approvals' | 'admin-audits';
+  setActiveTab: (tab: 'overview' | 'transfers' | 'loans' | 'fixed-deposits' | 'utilities' | 'merchant' | 'admin' | 'admin-dashboard' | 'admin-directory' | 'admin-approvals' | 'admin-audits') => void;
   devHudOpen: boolean;
   setDevHudOpen: (open: boolean) => void;
   notificationOpen: boolean;
@@ -40,7 +40,7 @@ const BankContext = createContext<BankContextType | undefined>(undefined);
 
 export const BankProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<bank.User | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'transfers' | 'loans' | 'fixed-deposits' | 'utilities' | 'merchant' | 'admin'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'transfers' | 'loans' | 'fixed-deposits' | 'utilities' | 'merchant' | 'admin' | 'admin-dashboard' | 'admin-directory' | 'admin-approvals' | 'admin-audits'>('overview');
   const [devHudOpen, setDevHudOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
 
@@ -74,6 +74,20 @@ export const BankProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsIdentityVerified(false);
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.role === 'administrator') {
+        if (!activeTab.startsWith('admin-')) {
+          setActiveTab('admin-dashboard');
+        }
+      } else {
+        if (activeTab.startsWith('admin-') || activeTab === 'admin') {
+          setActiveTab('overview');
+        }
+      }
+    }
+  }, [currentUser, activeTab]);
 
   const verifyIdentity = (bvnOrNin: string): boolean => {
     if (!currentUser) return false;

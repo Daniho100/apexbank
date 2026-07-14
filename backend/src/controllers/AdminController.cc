@@ -434,8 +434,18 @@ void AdminController::deleteUser(
         }
         std::string role = checkRes[0]["role"].as<std::string>();
         std::string email = checkRes[0]["email"].as<std::string>();
-        if (role == "administrator" || email == "system_treasury@banking.com") {
-            throw std::runtime_error("Cannot delete administrative or system treasury profiles.");
+        if (email == "system_treasury@banking.com") {
+            throw std::runtime_error("Cannot delete the system treasury profile.");
+        }
+        if (role == "administrator") {
+            auto countRes = trans->execSqlSync(
+                "SELECT COUNT(*) FROM users WHERE role = 'administrator' AND id != $1 AND email != 'system_treasury@banking.com'",
+                userId
+            );
+            long long remainingAdmins = countRes[0][0].as<long long>();
+            if (remainingAdmins == 0) {
+                throw std::runtime_error("Cannot delete the last administrator account.");
+            }
         }
 
         trans->execSqlSync(

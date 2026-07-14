@@ -11,11 +11,19 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 const btnDanger = "bg-rose-600 hover:bg-rose-500 text-white font-semibold py-2.5 px-4 rounded-xl transition-all active:scale-[0.98] cursor-pointer text-xs flex items-center gap-1.5 border border-rose-500/10";
 const btnSuccess = "bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 px-4 rounded-xl transition-all active:scale-[0.98] cursor-pointer text-xs flex items-center gap-1.5 border border-emerald-500/10";
 
-export const Admin: React.FC = () => {
-  const { loansList, loanSchedules, auditLogs, reloadUserData, showToast } = useBank();
+interface AdminProps {
+  initialTab?: 'dashboard' | 'directory' | 'approvals' | 'audits';
+}
+
+export const Admin: React.FC<AdminProps> = ({ initialTab = 'dashboard' }) => {
+  const { loansList, loanSchedules, auditLogs, reloadUserData, showToast, setActiveTab } = useBank();
   
   // Tab states for inner admin sidebar
-  const [adminTab, setAdminTab] = useState<'dashboard' | 'directory' | 'approvals' | 'audits'>('dashboard');
+  const [adminTab, setAdminTab] = useState<'dashboard' | 'directory' | 'approvals' | 'audits'>(initialTab);
+
+  useEffect(() => {
+    setAdminTab(initialTab);
+  }, [initialTab]);
 
   // Selection states
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -202,77 +210,9 @@ export const Admin: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col xl:flex-row gap-8 pb-12 min-h-[600px]">
-      
-      {/* INNER ADMIN NAVIGATION SIDEBAR */}
-      <aside className="w-full xl:w-64 bg-slate-900 border border-slate-800 rounded-3xl p-5 flex flex-col gap-2 shrink-0 self-start">
-        <div className="px-3 py-2.5 mb-4 border-b border-slate-850 flex items-center gap-2.5">
-          <Shield size={20} className="text-blue-500" />
-          <span className="font-extrabold text-sm text-white tracking-wider uppercase">Admin Control</span>
-        </div>
-        
-        <button 
-          onClick={() => setAdminTab('dashboard')} 
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-xs transition-all tracking-wider uppercase ${
-            adminTab === 'dashboard' 
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/10' 
-              : 'text-slate-450 hover:bg-slate-955/40 hover:text-slate-200'
-          }`}
-        >
-          <TrendingUp size={16} /> Dashboard Stats
-        </button>
-        
-        <button 
-          onClick={() => setAdminTab('directory')} 
-          className={`flex items-center justify-between px-4 py-3 rounded-xl font-semibold text-xs transition-all tracking-wider uppercase ${
-            adminTab === 'directory' 
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/10' 
-              : 'text-slate-450 hover:bg-slate-955/40 hover:text-slate-200'
-          }`}
-        >
-          <span className="flex items-center gap-3"><Users size={16} /> User Directory</span>
-          <span className="text-[10px] bg-slate-800 text-slate-300 font-bold px-2 py-0.5 rounded-full">{allUsers.length}</span>
-        </button>
-        
-        <button 
-          onClick={() => setAdminTab('approvals')} 
-          className={`flex items-center justify-between px-4 py-3 rounded-xl font-semibold text-xs transition-all tracking-wider uppercase ${
-            adminTab === 'approvals' 
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/10' 
-              : 'text-slate-450 hover:bg-slate-955/40 hover:text-slate-200'
-          }`}
-        >
-          <span className="flex items-center gap-3"><Shield size={16} /> Loan Approvals</span>
-          {pendingLoans.length > 0 && (
-            <span className="text-[10px] bg-rose-600 text-white font-bold px-2 py-0.5 rounded-full animate-bounce">{pendingLoans.length}</span>
-          )}
-        </button>
-        
-        <button 
-          onClick={() => setAdminTab('audits')} 
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-xs transition-all tracking-wider uppercase ${
-            adminTab === 'audits' 
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/10' 
-              : 'text-slate-450 hover:bg-slate-955/40 hover:text-slate-200'
-          }`}
-        >
-          <Terminal size={16} /> Security Audits
-        </button>
-
-        {overdueAlertUsers.length > 0 && (
-          <div className="mt-6 bg-rose-955/20 border border-rose-900/30 p-4 rounded-2xl flex flex-col gap-2">
-            <span className="text-[10px] font-black text-rose-400 tracking-wider uppercase flex items-center gap-1.5">
-              <AlertTriangle size={12} className="animate-pulse" /> Delinquency Warnings
-            </span>
-            <p className="text-[10px] text-rose-350/80 leading-normal">
-              {overdueAlertUsers.length} profiles have overdue repayments. Audits are advised.
-            </p>
-          </div>
-        )}
-      </aside>
-
+    <div className="pb-12 min-h-[600px]">
       {/* RIGHT CONTENT PANE */}
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0">
         
         {/* TABS SWITCHING CONTENT */}
         {adminTab === 'dashboard' && (
@@ -376,7 +316,7 @@ export const Admin: React.FC = () => {
                     <div className="bg-orange-955/20 border border-orange-500/20 p-3.5 rounded-2xl flex flex-col gap-1">
                       <span className="text-[10px] font-black text-orange-400 uppercase">Pending Approvals</span>
                       <p className="text-[10px] text-orange-300 leading-normal">{pendingLoans.length} loan applications are waiting for admin disburse approvals.</p>
-                      <button onClick={() => setAdminTab('approvals')} className="text-left text-[9px] font-extrabold text-orange-400 hover:text-white mt-1 uppercase flex items-center gap-0.5">
+                      <button onClick={() => setActiveTab('admin-approvals')} className="text-left text-[9px] font-extrabold text-orange-400 hover:text-white mt-1 uppercase flex items-center gap-0.5">
                         Process applications <ChevronRight size={10} />
                       </button>
                     </div>
@@ -385,7 +325,7 @@ export const Admin: React.FC = () => {
                     <div className="bg-rose-955/20 border border-rose-500/20 p-3.5 rounded-2xl flex flex-col gap-1">
                       <span className="text-[10px] font-black text-rose-400 uppercase">Overdue Loan Repayments</span>
                       <p className="text-[10px] text-rose-300 leading-normal">{overdueAlertUsers.length} user accounts have active loans with outstanding overdue installments.</p>
-                      <button onClick={() => setAdminTab('directory')} className="text-left text-[9px] font-extrabold text-rose-400 hover:text-white mt-1 uppercase flex items-center gap-0.5">
+                      <button onClick={() => setActiveTab('admin-directory')} className="text-left text-[9px] font-extrabold text-rose-400 hover:text-white mt-1 uppercase flex items-center gap-0.5">
                         Inspect delinquent profiles <ChevronRight size={10} />
                       </button>
                     </div>
