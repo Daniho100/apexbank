@@ -146,8 +146,8 @@ export const Transfers: React.FC = () => {
         {/* Left Form Column */}
         <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-8 w-full">
           <div className="mb-6 border-b border-slate-850 pb-4">
-            <h3 className="font-bold text-white text-lg">Direct Internal Fund Transfers</h3>
-            <p className="text-slate-500 text-xs mt-1">Transfers post dual credit/debit records to database journal sheets under transaction locks.</p>
+            <h3 className="font-bold text-white text-lg">Fund Transfers</h3>
+            <p className="text-slate-500 text-xs mt-1">Transfer</p>
           </div>
 
           <form onSubmit={handleTransferSubmit} className="flex flex-col gap-6">
@@ -185,7 +185,7 @@ export const Transfers: React.FC = () => {
             </div>
 
             <button type="submit" className={btnPrimary}>
-              Post Internal Transfer <ArrowRight size={16} />
+              Transfer <ArrowRight size={16} />
             </button>
           </form>
         </div>

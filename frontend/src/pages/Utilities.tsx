@@ -9,7 +9,7 @@ const btnPrimary = "w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:fr
 const btnSecondary = "w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 px-4 rounded-xl transition-all active:scale-[0.98] cursor-pointer";
 
 export const Utilities: React.FC = () => {
-  const { 
+  const {
     activeAccount, 
     idempotencyKey, 
     regenerateIdempotencyKey, 

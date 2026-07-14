@@ -26,6 +26,8 @@ void FixedDepositController::getDeposits(
     }
 
     try {
+        services::FixedDepositManager::checkMaturities();
+        
         auto result = (role == "administrator") ?
             db->execSqlSync(
                 "SELECT id, user_id, amount, duration_months, interest_rate, status, start_date, maturity_date, certificate_number "

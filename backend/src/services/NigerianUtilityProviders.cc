@@ -9,6 +9,13 @@
 
 namespace banking::services {
 
+static bool isValidNigerianNumber(const std::string& num) {
+    if (num.length() != 11) return false;
+    if (num[0] != '0') return false;
+    if (num[1] != '7' && num[1] != '8' && num[1] != '9') return false;
+    return std::all_of(num.begin(), num.end(), ::isdigit);
+}
+
 std::string NigerianUtilityProviders::generateElectricityToken() {
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -16,9 +23,6 @@ std::string NigerianUtilityProviders::generateElectricityToken() {
     
     std::stringstream ss;
     for (int i = 0; i < 20; ++i) {
-        if (i > 0 && i % 4 == 0) {
-            ss << "-";
-        }
         ss << dis(gen);
     }
     return ss.str();
@@ -35,8 +39,8 @@ Json::Value NigerianUtilityProviders::buyAirtime(
     if (provider != "MTN" && provider != "Airtel" && provider != "Glo" && provider != "9mobile") {
         throw std::invalid_argument("Invalid telco provider: " + provider);
     }
-    if (phoneNumber.empty() || phoneNumber.size() < 10) {
-        throw std::invalid_argument("Invalid phone number.");
+    if (phoneNumber.empty() || !isValidNigerianNumber(phoneNumber)) {
+        throw std::invalid_argument("Invalid phone number. Must be a valid 11-digit Nigerian number (e.g., starting with 080, 090, 070).");
     }
     
     // 2. Process account debit via LedgerService
@@ -67,8 +71,8 @@ Json::Value NigerianUtilityProviders::buyData(
     if (provider != "MTN" && provider != "Airtel" && provider != "Glo" && provider != "9mobile") {
         throw std::invalid_argument("Invalid telco provider: " + provider);
     }
-    if (phoneNumber.empty()) {
-        throw std::invalid_argument("Invalid phone number.");
+    if (phoneNumber.empty() || !isValidNigerianNumber(phoneNumber)) {
+        throw std::invalid_argument("Invalid phone number. Must be a valid 11-digit Nigerian number (e.g., starting with 080, 090, 070).");
     }
     
     std::string desc = "Data Bundle Purchase (" + bundleName + "): " + provider + " to " + phoneNumber;
@@ -94,6 +98,9 @@ Json::Value NigerianUtilityProviders::purchaseElectricity(
 ) {
     if (meterNumber.empty()) {
         throw std::invalid_argument("Meter number cannot be empty.");
+    }
+    if (meterNumber.length() != 16 || !std::all_of(meterNumber.begin(), meterNumber.end(), ::isdigit)) {
+        throw std::invalid_argument("Meter number must be a 16-digit number.");
     }
     
     // Check if the transaction with this key was already run

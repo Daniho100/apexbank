@@ -46,7 +46,7 @@ export const Sidebar: React.FC = () => {
               onClick={() => setActiveTab('loans')} 
               className={activeTab === 'loans' ? tabClassActive : tabClassInactive}
             >
-              <Award size={18} /> Loans Engine
+              <Award size={18} /> Loans
             </button>
             <button 
               onClick={() => setActiveTab('utilities')} 

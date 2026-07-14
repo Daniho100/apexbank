@@ -42,12 +42,30 @@ void BillController::pay(
         accountNo = reqJson.get("accountNo", "").asString();
     }
     std::string provider = reqJson.get("provider", "").asString();
+    std::string type = reqJson.get("type", "").asString();
+    
+    std::string typeLower = type;
+    std::transform(typeLower.begin(), typeLower.end(), typeLower.begin(), ::tolower);
+
     std::string recipient = reqJson.get("recipient", "").asString();
+    if (recipient.empty()) {
+        if (typeLower == "electricity") {
+            recipient = reqJson.get("meter_number", "").asString();
+        } else if (typeLower == "airtime" || typeLower == "data") {
+            recipient = reqJson.get("phone_number", "").asString();
+        }
+    }
     if (recipient.empty()) {
         recipient = reqJson.get("meterNo", "").asString();
     }
+    if (recipient.empty()) {
+        recipient = reqJson.get("phone_number", "").asString();
+    }
+    if (recipient.empty()) {
+        recipient = reqJson.get("meter_number", "").asString();
+    }
+
     double amount = reqJson.get("amount", 0.0).asDouble();
-    std::string type = reqJson.get("type", "").asString();
 
     if (accountNo.empty() || amount <= 0.0 || type.empty()) {
         auto resp = drogon::HttpResponse::newHttpJsonResponse([](){
@@ -63,9 +81,6 @@ void BillController::pay(
 
     try {
         Json::Value res;
-        // Make type lowercase for easier matching
-        std::string typeLower = type;
-        std::transform(typeLower.begin(), typeLower.end(), typeLower.begin(), ::tolower);
 
         if (typeLower == "airtime") {
             res = services::NigerianUtilityProviders::buyAirtime(accountNo, provider, recipient, amount, idempotencyKey);

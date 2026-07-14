@@ -222,7 +222,7 @@ export const Overview: React.FC = () => {
               <Plus size={20} />
             </div>
             <div>
-              <h3 className="font-bold text-white text-base">Clear Cash Deposit</h3>
+              <h3 className="font-bold text-white text-base">Deposit</h3>
               <p className="text-slate-500 text-xs mt-0.5">Post funds directly to your ledger wallet</p>
             </div>
           </div>
@@ -237,7 +237,7 @@ export const Overview: React.FC = () => {
                 placeholder="e.g. 50,000"
               />
             </div>
-            <button type="submit" className={btnPrimary}>Clear Cash Deposit</button>
+            <button type="submit" className={btnPrimary}>Deposit</button>
           </form>
         </div>
 
@@ -248,7 +248,7 @@ export const Overview: React.FC = () => {
               <DollarSign size={20} />
             </div>
             <div>
-              <h3 className="font-bold text-white text-base">ATM Cashout Withdrawal</h3>
+              <h3 className="font-bold text-white text-base">Withdrawal</h3>
               <p className="text-slate-500 text-xs mt-0.5">Deduct cash instantly from your ledger balance</p>
             </div>
           </div>
@@ -264,7 +264,7 @@ export const Overview: React.FC = () => {
               />
             </div>
             <button type="submit" className="w-full bg-rose-600 hover:bg-rose-500 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-lg active:scale-[0.98] cursor-pointer text-sm">
-              Execute ATM Cashout
+              Withdrawal
             </button>
           </form>
         </div>

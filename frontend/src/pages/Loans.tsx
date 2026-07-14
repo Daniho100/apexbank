@@ -81,7 +81,7 @@ export const Loans: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Apply */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-          <h3 className="font-bold text-white text-base mb-6">Request Amortized Credit Line</h3>
+          <h3 className="font-bold text-white text-base mb-6">Request Loan</h3>
           {hasDefaultedLoan && (
             <div className="mb-4 p-4 rounded-xl border border-rose-500/20 bg-rose-950/20 text-rose-400 text-xs flex items-center gap-2">
               <AlertCircle size={16} />
@@ -112,7 +112,7 @@ export const Loans: React.FC = () => {
               />
             </div>
             <div>
-              <label className={labelClass}>Loan Amortization Duration</label>
+              <label className={labelClass}>Loan Duration</label>
               <select 
                 value={loanDuration}
                 onChange={e => setLoanDuration(e.target.value)}
@@ -136,7 +136,7 @@ export const Loans: React.FC = () => {
 
         {/* Repay */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-          <h3 className="font-bold text-white text-base mb-6">Amortization Installment Payment</h3>
+          <h3 className="font-bold text-white text-base mb-6">Installment Payment</h3>
           <form onSubmit={handleRepayLoan} className="flex flex-col gap-4">
             <div>
               <label className={labelClass}>Select Credit Profile</label>
@@ -164,7 +164,7 @@ export const Loans: React.FC = () => {
               />
             </div>
             <button type="submit" className={btnPrimary} disabled={!activeLoanId || !loanRepayAmount}>
-              Post Installment Repayment
+              Repay
             </button>
           </form>
         </div>

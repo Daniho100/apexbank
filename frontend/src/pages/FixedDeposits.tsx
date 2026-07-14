@@ -47,14 +47,23 @@ export const FixedDeposits: React.FC = () => {
     }
   };
 
-  const handleLiquidateFD = async (fdId: string) => {
+  const handleLiquidateFD = async (fd: any) => {
     if (!currentUser) return;
-    if (!window.confirm("Are you sure you want to liquidate this Fixed Deposit Certificate early? A 10% early liquidation penalty will be deducted from your principal.")) {
-      return;
+    const isMatured = new Date(fd.maturity_date) <= new Date();
+    if (!isMatured) {
+      const penalty = fd.amount * 0.1;
+      const formattedPenalty = penalty.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (!window.confirm(`Warning: This Fixed Deposit Certificate has not matured yet (Maturity Date: ${new Date(fd.maturity_date).toLocaleDateString()}). If you liquidate early, a 10% early liquidation penalty (${formattedPenalty} NGN) will be deducted from your principal. Do you want to continue?`)) {
+        return;
+      }
+    } else {
+      if (!window.confirm("Are you sure you want to liquidate this matured Fixed Deposit Certificate?")) {
+        return;
+      }
     }
     try {
-      await bank.earlyWithdrawFixedDeposit(fdId, currentUser.id);
-      showToast('success', 'Certificate early liquidated.');
+      await bank.earlyWithdrawFixedDeposit(fd.id, currentUser.id);
+      showToast('success', 'Certificate liquidated.');
       await reloadUserData();
     } catch (err: any) {
       showToast('error', err.message);
@@ -158,7 +167,7 @@ export const FixedDeposits: React.FC = () => {
                 </div>
                 {fd.status === 'active' && (
                   <button 
-                    onClick={() => handleLiquidateFD(fd.id)}
+                    onClick={() => handleLiquidateFD(fd)}
                     className="w-full py-2.5 text-xs font-bold rounded-xl bg-rose-600/10 hover:bg-rose-600/20 text-rose-400 border border-rose-500/10 transition-colors cursor-pointer"
                   >
                     Liquidate Certificate Early
