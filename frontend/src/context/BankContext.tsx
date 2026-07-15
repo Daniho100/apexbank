@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import * as bank from '../api/bankApi';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_API_URL || 'https://apexbank-y8k7.onrender.com';
 
 interface BankContextType {
   currentUser: bank.User | null;
