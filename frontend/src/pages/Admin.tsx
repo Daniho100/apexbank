@@ -6,7 +6,7 @@ import {
 import { useBank } from '../context/BankContext';
 import * as bank from '../api/bankApi';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_API_URL || 'https://apexbank-y8k7.onrender.com';
 
 const btnDanger = "bg-rose-600 hover:bg-rose-500 text-white font-semibold py-2.5 px-4 rounded-xl transition-all active:scale-[0.98] cursor-pointer text-xs flex items-center gap-1.5 border border-rose-500/10";
 const btnSuccess = "bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 px-4 rounded-xl transition-all active:scale-[0.98] cursor-pointer text-xs flex items-center gap-1.5 border border-emerald-500/10";
