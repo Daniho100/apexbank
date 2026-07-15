@@ -142,7 +142,7 @@ export function setStorage<T>(key: string, value: T): void {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_API_URL || 'https://apexbank-y8k7.onrender.com';
 
 async function apiRequest(path: string, options: RequestInit = {}): Promise<any> {
   const token = sessionStorage.getItem('auth_token');
