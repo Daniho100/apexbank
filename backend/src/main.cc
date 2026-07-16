@@ -11,7 +11,8 @@
 #include "controllers/BillController.h"
 #include "controllers/MerchantController.h"
 #include "controllers/AdminController.h"
-
+#include "security/PayloadEncryptionAdvice.h"
+#include "middleware/WafMiddleware.h"
 void resolveConfig(const std::string& inputPath, const std::string& outputPath) {
     std::ifstream infile(inputPath);
     if (!infile.is_open()) {
@@ -247,14 +248,15 @@ int main(int argc, char* argv[]) {
 
     LOG_INFO << "Starting Banking Application MVP web server on port 8080...";
     
-    // Register global CORS support
+    // 1. Register global CORS OPTIONS handler
     drogon::app().registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req, drogon::AdviceCallback &&acb, drogon::AdviceChainCallback &&callback) {
         if (req->method() == drogon::HttpMethod::Options) {
             auto resp = drogon::HttpResponse::newHttpResponse();
             resp->setStatusCode(drogon::k200OK);
             resp->addHeader("Access-Control-Allow-Origin", "*");
             resp->addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-            resp->addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Idempotency-Key");
+            resp->addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Idempotency-Key, X-Encrypted-Payload");
+            resp->addHeader("Access-Control-Expose-Headers", "Idempotency-Key, X-Encrypted-Payload");
             resp->addHeader("Access-Control-Max-Age", "3600");
             acb(resp);
             return;
@@ -262,11 +264,46 @@ int main(int argc, char* argv[]) {
         callback();
     });
 
+    // 2. Register Payload Decryption Pre-routing advice
+    drogon::app().registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req, drogon::AdviceCallback &&acb, drogon::AdviceChainCallback &&callback) {
+        banking::security::PayloadEncryptionAdvice::handlePreRouting(req, std::move(acb), std::move(callback));
+    });
+
+    // 3. Register WAF Firewall Pre-routing advice
+    drogon::app().registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req, drogon::AdviceCallback &&acb, drogon::AdviceChainCallback &&callback) {
+        std::string blockReason;
+        if (banking::middleware::WafMiddleware::isRequestMalicious(req, blockReason)) {
+            LOG_WARN << "WAF blocked request: " << blockReason;
+            auto resp = drogon::HttpResponse::newHttpJsonResponse([](){
+                Json::Value json;
+                json["error"] = "Forbidden";
+                json["message"] = "Request blocked by Web Application Firewall (WAF).";
+                return json;
+            }());
+            resp->setStatusCode(drogon::k403Forbidden);
+            
+            // Standard CORS headers for blocked responses as well
+            resp->addHeader("Access-Control-Allow-Origin", "*");
+            resp->addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            resp->addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Idempotency-Key, X-Encrypted-Payload");
+            resp->addHeader("Access-Control-Expose-Headers", "Idempotency-Key, X-Encrypted-Payload");
+            
+            acb(resp);
+            return;
+        }
+        callback();
+    });
+
+    // 4. Register Post Handling for Response Encryption
     drogon::app().registerPostHandlingAdvice([](const drogon::HttpRequestPtr &req, const drogon::HttpResponsePtr &resp) {
+        // Enforce basic CORS on all responses
         resp->addHeader("Access-Control-Allow-Origin", "*");
         resp->addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        resp->addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Idempotency-Key");
-        resp->addHeader("Access-Control-Expose-Headers", "Idempotency-Key");
+        resp->addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Idempotency-Key, X-Encrypted-Payload");
+        resp->addHeader("Access-Control-Expose-Headers", "Idempotency-Key, X-Encrypted-Payload");
+
+        // Encrypt body if request was marked encrypted
+        banking::security::PayloadEncryptionAdvice::handlePostHandling(req, resp);
     });
 
     drogon::app().registerBeginningAdvice([](){

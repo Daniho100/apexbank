@@ -1,0 +1,50 @@
+========================================================================
+                      APEX TRUST BANK - END USER LICENSE AGREEMENT (EULA)
+========================================================================
+
+Please read this End User License Agreement ("Agreement") carefully before
+installing or using the Apex Trust Bank Desktop Application ("Application").
+
+By installing, copying, or using this Application, you agree to be bound
+by the terms of this Agreement and the Apex Trust Bank Privacy Policy. If you
+do not agree to these terms, do not install or use the Application.
+
+1. LICENSE GRANT
+Apex Trust Bank grants you a personal, non-transferable, non-exclusive,
+revocable license to download, install, and use the Application strictly for
+your personal, non-commercial financial operations on compatible devices.
+
+2. SECURITY RESPONSIBILITIES
+- You are responsible for keeping your login credentials, passwords, and 
+  two-factor secrets confidential.
+- The Application utilizes end-to-end data encryption and client-side firewalls.
+  However, you must ensure that your system is free of malware, keyloggers,
+  or security compromises that could intercept data in memory or display.
+- Any attempt to bypass, reverse-engineer, or tamper with the integrated WAF
+  (Web Application Firewall) or payload encryption triggers automatic account lock
+  and compliance logging.
+
+3. RESTRICTIONS ON USE
+You agree NOT to:
+- Decompile, reverse engineer, disassemble, or derive the source code of 
+  the C++ backend or Electron packaging structure.
+- Use the Application for any illegal activities, money laundering, fraud,
+  or unauthorized credit testing.
+- Modify, adapt, translate, or create derivative works based on this software.
+
+4. SYSTEM COMPATIBILITY
+This software is designed to run on Windows 32-bit and 64-bit platforms, and macOS.
+Compatibility with future operating system versions is not guaranteed.
+
+5. PRIVACY POLICY
+All data processed within this Application is subject to encryption under standard
+AES-256-GCM rules. Local session profiles are stored in encrypted format on your
+device to prevent physical unauthorized access.
+
+6. TERMINATION
+This license is effective until terminated. Your rights under this license will
+terminate automatically without notice if you fail to comply with any of its terms.
+
+========================================================================
+Copyright (c) 2026 Apex Trust Bank. All rights reserved.
+========================================================================

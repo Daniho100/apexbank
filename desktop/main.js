@@ -18,14 +18,56 @@ function createWindow() {
     }
   });
 
-  
+  // Desktop Application Firewall: Block unauthorized outbound connections
+  session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
+    const url = details.url;
+    try {
+      const parsedUrl = new URL(url);
+      const host = parsedUrl.hostname.toLowerCase();
+
+      // Whitelist of allowed hosts
+      const allowedHosts = [
+        'localhost',
+        '127.0.0.1',
+        'apexbank-y8k7.onrender.com',
+        'fonts.googleapis.com',
+        'fonts.gstatic.com'
+      ];
+
+      // Internal protocols used by Electron and DevTools
+      const allowedProtocols = [
+        'file:',
+        'devtools:',
+        'chrome-extension:',
+        'chrome-devtools:'
+      ];
+
+      if (allowedProtocols.includes(parsedUrl.protocol)) {
+        callback({ cancel: false });
+        return;
+      }
+
+      const isAllowedHost = allowedHosts.some(allowed => host === allowed || host.endsWith('.' + allowed));
+      if (!isAllowedHost) {
+        console.warn(`Desktop Network Firewall BLOCKED request to: ${url}`);
+        callback({ cancel: true }); // Cancel/block request
+        return;
+      }
+
+      callback({ cancel: false });
+    } catch (e) {
+      console.error(`Desktop Firewall URL parsing error: ${e.message}`);
+      callback({ cancel: true });
+    }
+  });
+
   // Enable Secure Content Security Policy (CSP)
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' ws://localhost:8080 http://localhost:8080 http://127.0.0.1:8080 wss://apexbank-y8k7.onrender.com https://apexbank-y8k7.onrender.com;"
+          "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' wss://apexbank-y8k7.onrender.com https://apexbank-y8k7.onrender.com;"
         ]
       }
     });

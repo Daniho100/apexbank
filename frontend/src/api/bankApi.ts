@@ -1,4 +1,5 @@
 // Production C++ Backend REST API client and type mappings
+import { encryptPayload, decryptPayload, encryptStorage, decryptStorage } from './encryption';
 
 export interface User {
   id: string;
@@ -130,19 +131,52 @@ export interface Notification {
 }
 
 // -------------------------------------------------------------------------
-// Storage Helper Functions (Maintains local cache for autocomplete directories)
+// Storage Helper Functions (Maintains local cache with transparent encryption)
 // -------------------------------------------------------------------------
 
 export function getStorage<T>(key: string, defaultValue: T): T {
   const item = localStorage.getItem(key);
-  return item ? JSON.parse(item) : defaultValue;
+  if (!item) return defaultValue;
+  try {
+    const decrypted = decryptStorage(item);
+    return JSON.parse(decrypted);
+  } catch (e) {
+    try {
+      // Fallback to plain JSON for unencrypted items
+      return JSON.parse(item);
+    } catch (_) {
+      return defaultValue;
+    }
+  }
 }
 
 export function setStorage<T>(key: string, value: T): void {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    const serialized = JSON.stringify(value);
+    const encrypted = encryptStorage(serialized);
+    localStorage.setItem(key, encrypted);
+  } catch (e) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
 }
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://apexbank-y8k7.onrender.com';
+
+function isInputSafe(input: string): boolean {
+  const lower = input.toLowerCase();
+  if (lower.includes("<script") || lower.includes("javascript:") || lower.includes("onerror=") || lower.includes("onload=")) return false;
+  if (lower.includes("union select") || (lower.includes("select ") && lower.includes("from ")) || lower.includes("or 1=1")) return false;
+  if (lower.includes("../") || lower.includes("..\\")) return false;
+  return true;
+}
+
+function runClientFirewall(body: any): void {
+  if (!body) return;
+  const bodyStr = typeof body === 'string' ? body : JSON.stringify(body);
+  if (!isInputSafe(bodyStr)) {
+    throw new Error("Client Firewall: Malicious query patterns or script injections detected and blocked.");
+  }
+}
 
 async function apiRequest(path: string, options: RequestInit = {}): Promise<any> {
   const token = sessionStorage.getItem('auth_token');
@@ -150,18 +184,73 @@ async function apiRequest(path: string, options: RequestInit = {}): Promise<any>
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
-  if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
-    headers.set('Content-Type', 'application/json');
+
+  // 1. Run Client Firewall on the payload before sending
+  if (options.body && !(options.body instanceof FormData)) {
+    runClientFirewall(options.body);
   }
+
+  // Egress Firewall: restrict target domains
+  const targetUrl = path.startsWith('http') ? path : `${API_URL}${path}`;
+  try {
+    const parsedUrl = new URL(targetUrl);
+    const allowedHosts = ['apexbank-y8k7.onrender.com', 'localhost', '127.0.0.1'];
+    if (!allowedHosts.some(h => parsedUrl.hostname.includes(h))) {
+      throw new Error(`Client Firewall Blocked: Outgoing request to unauthorized domain: ${parsedUrl.hostname}`);
+    }
+  } catch (e) {
+    // If URL parsing fails and it's a relative path, let it pass (standard relative fetch)
+    if (path.startsWith('http')) {
+      throw new Error("Client Firewall: Malicious URL structure detected.");
+    }
+  }
+
+  let finalBody = options.body;
+  if (options.body && !(options.body instanceof FormData)) {
+    // 2. Encrypt the request payload if it's a write operation
+    const rawBody = typeof options.body === 'string' ? options.body : JSON.stringify(options.body);
+    try {
+      const encrypted = await encryptPayload(rawBody);
+      finalBody = encrypted;
+      headers.set('X-Encrypted-Payload', 'true');
+      headers.set('Content-Type', 'text/plain');
+    } catch (e) {
+      console.error('Failed to encrypt request payload:', e);
+      throw new Error('Security Error: Failed to secure request data.');
+    }
+  }
+
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
+    body: finalBody,
     headers
   });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || errorData.error || `HTTP error! status: ${response.status}`);
+
+  const isEncrypted = response.headers.get('X-Encrypted-Payload') === 'true';
+  let responseText = await response.text();
+
+  if (isEncrypted && responseText) {
+    try {
+      responseText = await decryptPayload(responseText);
+    } catch (e) {
+      console.error('Failed to decrypt response payload:', e);
+      throw new Error('Security Error: Failed to verify response integrity.');
+    }
   }
-  return response.json().catch(() => null);
+
+  if (!response.ok) {
+    let errorData = {};
+    try {
+      errorData = JSON.parse(responseText);
+    } catch (_) {}
+    throw new Error((errorData as any).message || (errorData as any).error || `HTTP error! status: ${response.status}`);
+  }
+
+  try {
+    return JSON.parse(responseText);
+  } catch (e) {
+    return null;
+  }
 }
 
 // -------------------------------------------------------------------------

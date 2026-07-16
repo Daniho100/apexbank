@@ -68,7 +68,7 @@ export const BankProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sync identity verification state when user logs in/out
   useEffect(() => {
     if (currentUser) {
-      const verified = localStorage.getItem(`verified_${currentUser.id}`) === 'true';
+      const verified = bank.getStorage<boolean>(`verified_${currentUser.id}`, false);
       setIsIdentityVerified(verified);
     } else {
       setIsIdentityVerified(false);
@@ -93,7 +93,7 @@ export const BankProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!currentUser) return false;
     const cleanNum = bvnOrNin.replace(/\D/g, '');
     if (cleanNum.length === 11) {
-      localStorage.setItem(`verified_${currentUser.id}`, 'true');
+      bank.setStorage(`verified_${currentUser.id}`, true);
       setIsIdentityVerified(true);
       logSecurity('Identity Verified', `User verified profile via BVN/NIN: ${cleanNum.slice(0, 3)}*******${cleanNum.slice(-2)}`);
       reloadUserData();
@@ -165,7 +165,7 @@ export const BankProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (notesRes.ok) {
         const notes = await notesRes.json();
         const readKey = `read_notifications_${currentUser.id}`;
-        const readIds = JSON.parse(localStorage.getItem(readKey) || '[]');
+        const readIds = bank.getStorage<string[]>(readKey, []);
         const updatedNotes = notes.map((n: any) => ({
           ...n,
           is_read: n.is_read || readIds.includes(n.id)

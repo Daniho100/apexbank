@@ -1,0 +1,178 @@
+========================================================================
+                      APEX TRUST BANK - SECURITY & PLATFORM DOCUMENTATION
+========================================================================
+
+This document outlines the architecture, security framework, multi-tier firewall
+implementations, storage encryption, .htaccess configurations, and deployment
+procedures for Apex Trust Bank (including backend, frontend, and desktop apps).
+
+------------------------------------------------------------------------
+1. ARCHITECTURE & TECHNOLOGY STACKS
+------------------------------------------------------------------------
+
+A. BACKEND TIER: C++ Drogon Framework
+- Framework: Drogon (High-performance C++17/20 HTTP Web Framework)
+- Databases: PostgreSQL (Primary database for relational ledger entries)
+             Redis (In-memory store for session caching and rate-limiting)
+- Core Technologies:
+  * Argon2id (OWASP-compliant secure password hashing with randomized salting)
+  * JSON-C++ (Native fast JSON parsing and serialization)
+  * OpenSSL (EVP cryptographic APIs for high-performance operations)
+  * JWT (Stateless token-based authorization and session management)
+
+B. FRONTEND TIER: React, TypeScript, and Vite
+- Stack: React 19, TypeScript, React Query, TailwindCSS
+- Framework: Vite (High-performance frontend asset bundler)
+- Core Technologies:
+  * SubtleCrypto (Native Web Crypto API for secure hardware-accelerated encryption)
+  * Local Storage (State caching with transparent client-side encryption)
+
+C. DESKTOP TIER: Electron Container Wrapper
+- Stack: Electron (NodeJS + Chromium runtime wrapper)
+- Platform: Windows (32/64-bit NSIS installers) & macOS (DMG packages)
+- Security: Enabled sandbox, contextIsolation, and preload script bridges.
+
+------------------------------------------------------------------------
+2. SECURITY MEASURES IMPLEMENTED (PROD-READY)
+------------------------------------------------------------------------
+
+A. THREE-TIER FIREWALL:
+1. Backend Web Application Firewall (WAF):
+   - Location: `backend/src/middleware/WafMiddleware`
+   - Scans incoming request URLs, query parameters, specific headers (like User-Agent),
+     and body content for threat patterns.
+   - Automatic protection against SQL Injection (SQLi), Cross-Site Scripting (XSS),
+     Path Traversal (`../`), and OS Command Injection.
+   - Requests matching these patterns are blocked immediately with an HTTP 403 response.
+2. Frontend Egress & Input Sanitization Firewall:
+   - Location: `frontend/src/api/bankApi.ts`
+   - Inspects body values before serialization, throwing local validation errors
+     if unsafe script tags or SQL vectors are detected.
+   - Intercepts and validates outgoing URL hosts against a whitelist to prevent DNS
+     rebinding or unauthorized data exfiltration.
+3. Desktop Outbound Firewall:
+   - Location: `desktop/main.js`
+   - Employs Electron's `webRequest.onBeforeRequest` hook to filter connections.
+   - Only permits requests to localhost, the API servers, and Google Fonts.
+   - Automatically cancels any other background connections.
+
+B. DATA ENCRYPTION (TRANSIT & STORAGE):
+1. End-to-End Payload Transit Encryption:
+   - Encrypts all request bodies on the client (using Web Crypto AES-256-GCM) and
+     decrypts them on the backend C++ server.
+   - Encrypts all response bodies on the C++ server (using OpenSSL AES-256-GCM) and
+     decrypts them on the client React tier.
+   - The encrypted text is packaged in a secure payload layout:
+     [12-byte IV] + [16-byte AUTHENTICATION TAG] + [CIPHERTEXT] in Base64 format.
+   - Activated via the `X-Encrypted-Payload: true` HTTP headers.
+2. Local Storage Encryption:
+   - Location: `frontend/src/api/encryption.ts`
+   - Automatically encrypts sensitive client-side data (such as login states and
+     verification flags) before writing to the local browser storage.
+   - Utilizes a key-based symmetric stream cipher to ensure data is protected from
+     physical drive snooping or unauthorized local access.
+
+------------------------------------------------------------------------
+3. APACHE (.HTACCESS) DOCUMENTATION & ROUTING RULES
+------------------------------------------------------------------------
+
+If hosting the compiled React web app on an Apache web server, place the following
+`.htaccess` configuration in the `frontend/dist/` root directory to manage URL
+rewrites for single-page routing (SPA), enforce HTTPS, and apply security headers:
+
+```apache
+# Force HTTPS and www
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Redirect all routing request to index.html (SPA fallback)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.html [L]
+
+# Prevent directory browsing
+Options -Indexes
+
+# Add Security Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "DENY"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "no-referrer-when-downgrade"
+    Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://apexbank-y8k7.onrender.com http://localhost:8080;"
+</IfModule>
+```
+
+------------------------------------------------------------------------
+4. ELECTRON INSTALLER TERMS & CONDITIONS SCREEN
+------------------------------------------------------------------------
+
+To show a Terms & Conditions screen during the Windows desktop app installation:
+1. We created the Terms & Conditions file at `desktop/license.txt`.
+2. We configured the Electron Builder package pipeline in `desktop/package.json` under
+   the `win` build properties to point to this license file:
+   ```json
+   "win": {
+     "target": "nsis"
+   },
+   "nsis": {
+     "license": "license.txt",
+     "oneClick": false,
+     "allowToChangeInstallationDirectory": true
+   }
+   ```
+3. During installation, the NSIS installer will display the terms page, forcing users to click "I Agree" before the app is installed.
+
+------------------------------------------------------------------------
+5. MACOS INSTALLATION INSTRUCTIONS FOR THE DESKTOP APP
+------------------------------------------------------------------------
+
+To build and run the desktop application on Apple macOS, follow these steps:
+
+Prerequisites:
+- A macOS machine with Node.js (v18+) and npm installed.
+- (Optional) Xcode Command Line Tools (`xcode-select --install`).
+
+Step 1: Install Dependencies
+1. Open the Terminal application.
+2. Navigate to the frontend directory and install dependencies:
+   ```bash
+   cd banking-app/frontend
+   npm install
+   ```
+3. Navigate to the desktop directory and install packaging dependencies:
+   ```bash
+   cd ../desktop
+   npm install
+   ```
+
+Step 2: Build the Frontend Assets
+1. Compile the React production build:
+   ```bash
+   cd ../frontend
+   npm run build
+   ```
+   This generates the optimized bundle in the `frontend/dist/` directory.
+
+Step 3: Run the Application Locally (Development Mode)
+1. Set the node environment to development and launch Electron:
+   ```bash
+   cd ../desktop
+   npm start
+   ```
+
+Step 4: Package the App for macOS (Production DMG)
+1. Build the distributable `.dmg` package:
+   ```bash
+   npm run package -- --mac
+   ```
+2. Once the build completes, the macOS application executable and the installable `.dmg` will be located in the `desktop/dist/` folder.
+
+Step 5: Installing the DMG
+1. Double-click the generated `ApexTrustBank.dmg` file inside `desktop/dist/`.
+2. Drag the `ApexTrustBank` application icon into your macOS `Applications` folder.
+3. If macOS displays a security warning stating that "the application is from an unidentified developer":
+   - Go to System Settings (System Preferences) -> Privacy & Security.
+   - Scroll down to the Security section and click "Open Anyway" to allow the app to run.
+========================================================================

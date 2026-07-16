@@ -56,6 +56,8 @@ set(SOURCE_FILES
     src/middleware/AuthMiddleware.cc
     src/middleware/RateLimitMiddleware.cc
     src/middleware/IdempotencyMiddleware.cc
+    src/middleware/WafMiddleware.cc
+    src/security/PayloadEncryptionAdvice.cc
 )
 
 # Main Executable
@@ -103,6 +105,8 @@ if(GTest_FOUND)
         src/middleware/AuthMiddleware.cc
         src/middleware/RateLimitMiddleware.cc
         src/middleware/IdempotencyMiddleware.cc
+        src/middleware/WafMiddleware.cc
+        src/security/PayloadEncryptionAdvice.cc
     )
     
     add_executable(backend_tests ${TEST_SOURCE_FILES})
