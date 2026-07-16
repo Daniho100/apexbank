@@ -27,8 +27,7 @@ function createWindow() {
 
       // Whitelist of allowed hosts
       const allowedHosts = [
-        'localhost',
-        '127.0.0.1',
+        'apexbank-front.onrender.com',
         'apexbank-y8k7.onrender.com',
         'fonts.googleapis.com',
         'fonts.gstatic.com'
@@ -67,16 +66,16 @@ function createWindow() {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' wss://apexbank-y8k7.onrender.com https://apexbank-y8k7.onrender.com;"
+          "default-src 'self' https://apexbank-front.onrender.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' wss://apexbank-y8k7.onrender.com https://apexbank-y8k7.onrender.com wss://apexbank-front.onrender.com https://apexbank-front.onrender.com;"
         ]
       }
     });
   });
 
-  // Smart Loader: Load Vite Dev Server if running, else load static index.html from Vite Build
+  // Smart Loader: Load hosted production URL if running, else load static local index.html build fallback
   const isDev = process.env.NODE_ENV === 'development';
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5173');
+    mainWindow.loadURL('https://apexbank-front.onrender.com');
     mainWindow.webContents.openDevTools();
   } else {
     // Load static build HTML file relative to app package root
@@ -86,8 +85,8 @@ function createWindow() {
 
     mainWindow.loadFile(indexPath).catch(() => {
       // Fallback if build is not compiled yet
-      mainWindow.loadURL('http://localhost:5173').catch(() => {
-        mainWindow.loadURL('data:text/html,<h1>Development Server Offline</h1><p>Vite dev server is offline and static react build was not compiled. Run <code>npm run build</code> inside the frontend folder.</p>');
+      mainWindow.loadURL('https://apexbank-front.onrender.com').catch(() => {
+        mainWindow.loadURL('data:text/html,<h1>Hosted Application Offline</h1><p>The hosted server is offline and the static react build was not compiled. Run <code>npm run build</code> inside the frontend folder.</p>');
       });
     });
   }

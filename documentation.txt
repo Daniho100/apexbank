@@ -100,9 +100,27 @@ Options -Indexes
     Header set X-Frame-Options "DENY"
     Header set X-XSS-Protection "1; mode=block"
     Header set Referrer-Policy "no-referrer-when-downgrade"
-    Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://apexbank-y8k7.onrender.com http://localhost:8080;"
+    Header set Content-Security-Policy "default-src 'self' https://apexbank-front.onrender.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' wss://apexbank-y8k7.onrender.com https://apexbank-y8k7.onrender.com wss://apexbank-front.onrender.com https://apexbank-front.onrender.com;"
 </IfModule>
 ```
+
+------------------------------------------------------------------------
+3B. RENDER STATIC SITE REDIRECTS (SPA FALLBACK)
+------------------------------------------------------------------------
+
+If hosting the compiled React web app on Render as a Static Site, page reloads
+might display a "Not Found" error. To resolve this, configure static rewrites:
+1. In the Render Dashboard, go to your Static Site service (e.g. apexbank-front).
+2. Click "Redirects/Rewrites" in the left sidebar.
+3. Click "Add Rule" and enter:
+   - Source: /*
+   - Destination: /index.html
+   - Action: Rewrite
+4. Click Save. This forces Render to send all URL navigation paths to index.html,
+   allowing React Router to load the correct page.
+
+Alternatively, we created a `render.yaml` blueprint in the repository root which
+contains this rewrite rule and can be imported to deploy the infrastructure.
 
 ------------------------------------------------------------------------
 4. ELECTRON INSTALLER TERMS & CONDITIONS SCREEN

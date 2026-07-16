@@ -194,7 +194,7 @@ async function apiRequest(path: string, options: RequestInit = {}): Promise<any>
   const targetUrl = path.startsWith('http') ? path : `${API_URL}${path}`;
   try {
     const parsedUrl = new URL(targetUrl);
-    const allowedHosts = ['apexbank-y8k7.onrender.com', 'localhost', '127.0.0.1'];
+    const allowedHosts = ['apexbank-y8k7.onrender.com', 'apexbank-front.onrender.com'];
     if (!allowedHosts.some(h => parsedUrl.hostname.includes(h))) {
       throw new Error(`Client Firewall Blocked: Outgoing request to unauthorized domain: ${parsedUrl.hostname}`);
     }

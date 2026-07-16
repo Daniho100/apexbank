@@ -1,0 +1,12 @@
+# Render infrastructure-as-code configuration for Apex Trust Bank
+services:
+  - type: web
+    name: apexbank-front
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    publishPath: frontend/dist
+    routes:
+      # Rewrite all routes to index.html for React Single Page Application (SPA) routing
+      - src: /*
+        dest: /index.html
+        status: rewrite
