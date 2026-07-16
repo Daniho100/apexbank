@@ -81,7 +81,7 @@ bool WafMiddleware::isRequestMalicious(const drogon::HttpRequestPtr& req, std::s
 
     // 4. Scan body (if present and not empty)
     if (!req->body().empty()) {
-        if (isMalicious(req->body())) {
+        if (isMalicious(std::string(req->body()))) {
             blockReason = "malicious payload in body";
             return true;
         }

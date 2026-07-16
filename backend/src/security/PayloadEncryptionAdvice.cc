@@ -15,7 +15,7 @@ void PayloadEncryptionAdvice::handlePreRouting(
     if (encryptedHeader == "true" && !req->body().empty()) {
         std::string aesKey = drogon::app().getCustomConfig().get("aes_encryption_key", "banking_aes_256_gcm_secret_key_32_bytes").asString();
         try {
-            std::string decrypted = EncryptionUtil::decrypt(req->body(), aesKey);
+            std::string decrypted = EncryptionUtil::decrypt(std::string(req->body()), aesKey);
             
             // Set the decrypted body back to the request
             req->setBody(std::move(decrypted));
